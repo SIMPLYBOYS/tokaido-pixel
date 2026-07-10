@@ -1,0 +1,285 @@
+{
+ "comment": "Phase B 工作清單：剩餘 40 站（遊戲編號 16-55 = 宿場番號 15-53 + 終點京師）。status: todo → assets → authored → verified",
+ "stations": [
+  {
+   "n": 16,
+   "slug": "16-kanbara",
+   "ja": "蒲原",
+   "pic": "夜之雪",
+   "status": "verified"
+  },
+  {
+   "n": 17,
+   "slug": "17-yui",
+   "ja": "由比",
+   "pic": "薩埵嶺",
+   "status": "verified"
+  },
+  {
+   "n": 18,
+   "slug": "18-okitsu",
+   "ja": "興津",
+   "pic": "興津川",
+   "status": "verified"
+  },
+  {
+   "n": 19,
+   "slug": "19-ejiri",
+   "ja": "江尻",
+   "pic": "三保遠望",
+   "status": "verified"
+  },
+  {
+   "n": 20,
+   "slug": "20-fuchu",
+   "ja": "府中",
+   "pic": "安倍川",
+   "status": "verified"
+  },
+  {
+   "n": 21,
+   "slug": "21-mariko",
+   "ja": "鞠子",
+   "pic": "名物茶店",
+   "status": "verified"
+  },
+  {
+   "n": 22,
+   "slug": "22-okabe",
+   "ja": "岡部",
+   "pic": "宇津之山",
+   "status": "verified"
+  },
+  {
+   "n": 23,
+   "slug": "23-fujieda",
+   "ja": "藤枝",
+   "pic": "人馬継立",
+   "status": "verified"
+  },
+  {
+   "n": 24,
+   "slug": "24-shimada",
+   "ja": "島田",
+   "pic": "大井川駿岸",
+   "status": "verified"
+  },
+  {
+   "n": 25,
+   "slug": "25-kanaya",
+   "ja": "金谷",
+   "pic": "大井川遠岸",
+   "status": "verified"
+  },
+  {
+   "n": 26,
+   "slug": "26-nissaka",
+   "ja": "日坂",
+   "pic": "佐夜ノ中山",
+   "status": "verified"
+  },
+  {
+   "n": 27,
+   "slug": "27-kakegawa",
+   "ja": "掛川",
+   "pic": "秋葉山遠望",
+   "status": "verified"
+  },
+  {
+   "n": 28,
+   "slug": "28-fukuroi",
+   "ja": "袋井",
+   "pic": "出茶屋ノ図",
+   "status": "verified"
+  },
+  {
+   "n": 29,
+   "slug": "29-mitsuke",
+   "ja": "見附",
+   "pic": "天龍川図",
+   "status": "verified"
+  },
+  {
+   "n": 30,
+   "slug": "30-hamamatsu",
+   "ja": "濱松",
+   "pic": "冬枯ノ図",
+   "status": "verified"
+  },
+  {
+   "n": 31,
+   "slug": "31-maisaka",
+   "ja": "舞坂",
+   "pic": "今切真景",
+   "status": "verified"
+  },
+  {
+   "n": 32,
+   "slug": "32-arai",
+   "ja": "荒井",
+   "pic": "渡舟ノ図",
+   "status": "verified"
+  },
+  {
+   "n": 33,
+   "slug": "33-shirasuka",
+   "ja": "白須賀",
+   "pic": "汐見阪図",
+   "status": "verified"
+  },
+  {
+   "n": 34,
+   "slug": "34-futagawa",
+   "ja": "二川",
+   "pic": "猿ヶ馬場",
+   "status": "verified"
+  },
+  {
+   "n": 35,
+   "slug": "35-yoshida",
+   "ja": "吉田",
+   "pic": "豐川橋",
+   "status": "verified"
+  },
+  {
+   "n": 36,
+   "slug": "36-goyu",
+   "ja": "御油",
+   "pic": "旅人留女",
+   "status": "verified"
+  },
+  {
+   "n": 37,
+   "slug": "37-akasaka",
+   "ja": "赤坂",
+   "pic": "旅舎招婦ノ図",
+   "status": "verified"
+  },
+  {
+   "n": 38,
+   "slug": "38-fujikawa",
+   "ja": "藤川",
+   "pic": "棒鼻ノ図",
+   "status": "verified"
+  },
+  {
+   "n": 39,
+   "slug": "39-okazaki",
+   "ja": "岡崎",
+   "pic": "矢矧之橋",
+   "status": "verified"
+  },
+  {
+   "n": 40,
+   "slug": "40-chiryu",
+   "ja": "池鯉鮒",
+   "pic": "首夏馬市",
+   "status": "verified"
+  },
+  {
+   "n": 41,
+   "slug": "41-narumi",
+   "ja": "鳴海",
+   "pic": "名物有松絞",
+   "status": "verified"
+  },
+  {
+   "n": 42,
+   "slug": "42-miya",
+   "ja": "宮",
+   "pic": "熱田神事",
+   "status": "verified"
+  },
+  {
+   "n": 43,
+   "slug": "43-kuwana",
+   "ja": "桑名",
+   "pic": "七里渡口",
+   "status": "verified"
+  },
+  {
+   "n": 44,
+   "slug": "44-yokkaichi",
+   "ja": "四日市",
+   "pic": "三重川",
+   "status": "verified"
+  },
+  {
+   "n": 45,
+   "slug": "45-ishiyakushi",
+   "ja": "石藥師",
+   "pic": "石藥師寺",
+   "status": "verified"
+  },
+  {
+   "n": 46,
+   "slug": "46-shono",
+   "ja": "庄野",
+   "pic": "白雨",
+   "status": "verified"
+  },
+  {
+   "n": 47,
+   "slug": "47-kameyama",
+   "ja": "龜山",
+   "pic": "雪晴",
+   "status": "verified"
+  },
+  {
+   "n": 48,
+   "slug": "48-seki",
+   "ja": "関",
+   "pic": "本陣早立",
+   "status": "verified"
+  },
+  {
+   "n": 49,
+   "slug": "49-sakanoshita",
+   "ja": "坂之下",
+   "pic": "筆捨嶺",
+   "status": "verified"
+  },
+  {
+   "n": 50,
+   "slug": "50-tsuchiyama",
+   "ja": "土山",
+   "pic": "春之雨",
+   "status": "verified"
+  },
+  {
+   "n": 51,
+   "slug": "51-minakuchi",
+   "ja": "水口",
+   "pic": "名物干瓢",
+   "status": "verified"
+  },
+  {
+   "n": 52,
+   "slug": "52-ishibe",
+   "ja": "石部",
+   "pic": "目川ノ里",
+   "status": "verified"
+  },
+  {
+   "n": 53,
+   "slug": "53-kusatsu",
+   "ja": "草津",
+   "pic": "名物立場",
+   "status": "verified"
+  },
+  {
+   "n": 54,
+   "slug": "54-otsu",
+   "ja": "大津",
+   "pic": "走井茶店",
+   "status": "verified"
+  },
+  {
+   "n": 55,
+   "slug": "55-kyoto",
+   "ja": "京師",
+   "pic": "三条大橋",
+   "status": "verified"
+  }
+ ]
+}

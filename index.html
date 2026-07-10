@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>東海道五十三次 — 像素道中記</title>
+<style>
+  :root {
+    --washi: #e6d8b7;
+    --washi-dark: #d4c5a4;
+    --ink: #2b2c2c;
+    --indigo: #233f4d;
+    --red: #9b564d;
+    --teal: #3d606a;
+    --gold: #f0c040;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--washi);
+    color: var(--ink);
+    font-family: "Hiragino Mincho ProN", "Noto Serif TC", serif;
+    min-height: 100vh;
+  }
+  header {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding: 10px 14px; border-bottom: 2px solid var(--ink); flex-wrap: wrap;
+  }
+  header h1 { font-size: 18px; letter-spacing: 2px; }
+  header .sub { font-size: 12px; color: var(--teal); }
+  header .hud { display: flex; gap: 10px; align-items: center; }
+  #day-count { font-size: 14px; color: var(--red); letter-spacing: 1px; }
+  header button {
+    font: inherit; font-size: 14px; background: var(--indigo); color: var(--washi);
+    border: none; padding: 5px 12px; border-radius: 3px; cursor: pointer;
+  }
+  #btn-bgm.off { opacity: .45; text-decoration: line-through; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ---- overworld map ---- */
+  /* padding-bottom 吸收邊緣節點（日本橋在 .955,.955）的標籤與燈塔放大外溢，
+     否則捲動範圍隨動畫脈動、背景跟著抖 */
+  #map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 70px; }
+  #map-wrap { position: relative; min-width: 900px; }
+  #map-wrap img { width: 100%; display: block; }
+  .node {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--ink); background: var(--washi);
+    font: bold 13px/26px sans-serif; text-align: center; cursor: pointer;
+    padding: 0; color: var(--ink);
+  }
+  .node.done { background: var(--red); color: var(--washi); }
+  .node.next { background: var(--gold); animation: beacon 2.2s ease-in-out infinite; z-index: 2; }
+  /* 當前站燈塔效果：放大→縮回，金色光環同步擴散 */
+  @keyframes beacon {
+    0%, 100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 0 0 rgba(240,192,64,.55); }
+    35% { transform: translate(-50%,-50%) scale(1.85); box-shadow: 0 0 0 6px rgba(240,192,64,.35); }
+    70% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 0 16px rgba(240,192,64,0); }
+  }
+  .node.next + .node-label { animation: beacon-label 2.2s ease-in-out infinite; z-index: 3; }
+  /* 站名與節點同步放大，峰值時多下移幾 px 避免被放大的節點蓋住 */
+  @keyframes beacon-label {
+    0%, 100% { transform: translate(-50%, 4px) scale(1); }
+    35% { transform: translate(-50%, 12px) scale(1.4); }
+    70% { transform: translate(-50%, 4px) scale(1); }
+  }
+  .node.locked { opacity: 0.45; cursor: not-allowed; background: var(--washi-dark); }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(240,192,64,.35); } }
+  /* 站名毛筆體：Yuji Boku（OFL）子集，只含 55 站站名 84 字，37KB */
+  @font-face {
+    font-family: "Yuji Boku";
+    src: url("game-assets/fonts/yujiboku-stations.woff2") format("woff2");
+    font-display: swap;
+  }
+  .node-label {
+    position: absolute; transform: translate(-50%, 4px); white-space: nowrap;
+    writing-mode: vertical-rl;   /* 仿名所一覽的直書名籤 */
+    font: 13px "Yuji Boku", "Kaiti TC", "Kaiti SC", "STKaiti", serif;
+    letter-spacing: 1px; color: var(--ink);
+    background: rgba(230,216,183,.92); padding: 3px 1px;
+    border: 1px solid rgba(43,36,32,.5); border-radius: 2px;
+    pointer-events: none;
+  }
+  /* 下一站移動動畫的旅人標記 */
+  #traveler {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--gold); border: 2px solid var(--ink);
+    box-shadow: 0 0 0 4px rgba(240,192,64,.35);
+    pointer-events: none; z-index: 3;
+    transition: left 1.8s cubic-bezier(.45,.05,.55,.95), top 1.8s cubic-bezier(.45,.05,.55,.95),
+                opacity .6s ease;
+  }
+
+  /* ---- 完歩式：回放・花火・雅號 ---- */
+  .node-label.lit { animation: labelPop .6s ease; }
+  @keyframes labelPop { 35% { transform: translate(-50%, 4px) scale(1.5); } }
+  #replay-days {
+    position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+    font: 16px "Yuji Boku", "Kaiti TC", "Kaiti SC", serif; letter-spacing: 2px;
+    background: rgba(230,216,183,.94); color: var(--ink);
+    border: 1px solid var(--ink); border-radius: 3px; padding: 4px 14px; z-index: 9;
+  }
+  #fw { position: fixed; inset: 0; pointer-events: none; z-index: 9; }
+  /* ---- 旅之繪卷：55 站像素場景連成一卷，由右向左展讀 ---- */
+  #emaki { padding: 10px 0; }
+  .emaki-bar { display: flex; align-items: center; gap: 12px; padding: 0 14px 10px; }
+  .emaki-tip { font-size: 12px; color: #716d5f; }
+  #emaki-scroll {
+    display: flex; flex-direction: row-reverse; align-items: center;
+    overflow-x: auto; padding: 20px 10px;
+    background: linear-gradient(#d4c5a4, var(--washi) 10%, var(--washi) 90%, #d4c5a4);
+  }
+  .epanel { flex: 0 0 auto; position: relative; cursor: pointer; }
+  .epanel img {
+    height: 62vh; display: block;
+    border-left: 2px solid rgba(43,44,44,.22);
+  }
+  .elabel {
+    position: absolute; top: 10px; right: 10px;
+    writing-mode: vertical-rl;
+    font: 15px "Yuji Boku", "Kaiti TC", "Kaiti SC", serif; letter-spacing: 2px;
+    color: var(--ink); background: rgba(230,216,183,.92);
+    border: 1px solid var(--ink); border-radius: 2px; padding: 6px 2px;
+  }
+  .ejiku { flex: 0 0 24px; height: 66vh; margin: 0 10px;
+    background: #3a2f28; border-radius: 12px; }   /* 卷軸兩端的軸木 */
+  #finale {
+    position: fixed; inset: 0; background: rgba(30,24,18,.82); z-index: 20;
+    display: none; align-items: center; justify-content: center;
+  }
+  #finale.active { display: flex; }
+  #finale-card {
+    background: var(--washi); border: 3px double var(--ink); border-radius: 4px;
+    padding: 28px 42px; text-align: center; color: var(--ink);
+    font-family: "Yuji Boku", "Kaiti TC", "Kaiti SC", serif;
+    animation: finPop .5s ease;
+  }
+  @keyframes finPop { from { transform: scale(.7); opacity: 0; } }
+  .fin-sub { font-size: 14px; letter-spacing: 6px; opacity: .75; }
+  .fin-title { font-size: 34px; letter-spacing: 10px; margin: 6px 0 14px; }
+  .fin-days { font-size: 15px; margin: 0 0 18px; }
+  .fin-gou { font-size: 30px; letter-spacing: 4px; margin: 4px 0 22px; color: var(--red); }
+  #finale-close, #finale-dl { font: inherit; font-size: 14px; background: var(--indigo); color: var(--washi);
+    border: none; border-radius: 3px; padding: 6px 22px; cursor: pointer; margin: 0 4px; }
+  #finale-dl { background: var(--red); }
+
+  /* ---- scene ---- */
+  #scene { text-align: center; padding-bottom: 30px; }
+  #scene-title { padding: 10px 12px 6px; font-size: 20px; letter-spacing: 3px; }
+  #scene-title small { font-size: 13px; color: var(--teal); margin-left: 8px; }
+  #day-banner {
+    display: inline-block; margin-bottom: 8px; padding: 5px 16px;
+    border: 1px solid var(--red); color: var(--red);
+    font-size: 14px; letter-spacing: 1px; border-radius: 3px;
+    background: rgba(240,230,200,.6);
+  }
+  #scene-wrap { position: relative; display: inline-block; max-width: 96vw; }
+  #scene-img {
+    width: 960px; max-width: 96vw; display: block;
+    image-rendering: pixelated;
+    border: 4px solid var(--ink);
+    cursor: crosshair;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #scene-img.real { image-rendering: auto; cursor: default; }
+  #loupe {
+    position: absolute; left: 0; top: 0; display: none;
+    width: 150px; height: 150px; border-radius: 50%;
+    will-change: transform;
+    border: 3px solid var(--ink);
+    box-shadow: 0 4px 14px rgba(43,44,44,.45), inset 0 0 0 2px var(--washi);
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    pointer-events: none; z-index: 5;
+  }
+  .found-mark {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid var(--gold);
+    box-shadow: 0 0 0 2px rgba(43,44,44,.6), inset 0 0 0 2px rgba(43,44,44,.6);
+    pointer-events: none;
+  }
+  .ripple {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(43,44,44,.7); pointer-events: none;
+    animation: rip .5s ease-out forwards;
+  }
+  @keyframes rip { to { width: 46px; height: 46px; opacity: 0; } }
+  .hint-ring {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 3px dashed var(--gold); pointer-events: none;
+    animation: pulse 0.8s 3;
+  }
+  #toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
+    background: var(--indigo); color: var(--washi); font-size: 15px;
+    padding: 8px 22px; border-radius: 4px; letter-spacing: 2px;
+    opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 20;
+  }
+  #toast.show { opacity: 1; }
+  #detail-list {
+    margin: 10px auto 0; font-size: 14px; color: var(--teal);
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    padding: 0 10px;
+  }
+  #detail-list .d { border-bottom: 1px dotted var(--teal); padding-bottom: 1px; }
+  #detail-list .d.got { color: var(--red); border-bottom-color: transparent; }
+  #detail-list .d.got::before { content: "✓ "; }
+  .btn-row { margin-top: 14px; display: flex; gap: 10px; justify-content: center; }
+  .btn-row button {
+    font: inherit; font-size: 15px; padding: 8px 20px; cursor: pointer;
+    background: var(--washi); border: 2px solid var(--ink); border-radius: 3px;
+  }
+  .btn-row button.primary { background: var(--indigo); color: var(--washi); border-color: var(--indigo); }
+  .btn-row button:disabled { opacity: .35; cursor: default; }
+
+  /* ---- unlock overlay / zukan entry ---- */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(43,44,44,.82);
+    display: none; align-items: flex-start; justify-content: center;
+    overflow-y: auto; padding: 20px 10px; z-index: 10;
+  }
+  #overlay.active { display: flex; }
+  #card {
+    background: var(--washi); max-width: 1150px; width: 100%;
+    border: 3px solid var(--ink); border-radius: 4px; padding: 18px;
+  }
+  #card .stamp {
+    text-align: center; color: var(--red); font-size: 15px; letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  #card h2 { text-align: center; font-size: 22px; letter-spacing: 4px; }
+  #card h2 small { font-size: 14px; color: var(--teal); margin-left: 8px; }
+  .hero { margin: 14px 0; }
+  .hero img { width: 100%; display: block; border: 2px solid var(--ink); cursor: zoom-in; }
+  .hero img.pixel { image-rendering: pixelated; }
+  .hero figcaption { text-align: center; font-size: 12px; padding-top: 4px; color: var(--teal); }
+
+  /* ---- 卡片進場與解鎖動畫（純 CSS）---- */
+  #overlay.active { animation: ov-in .3s ease-out; }
+  #overlay.active #card { animation: card-in .45s cubic-bezier(.2,.7,.3,1) backwards; }
+  @keyframes ov-in { from { opacity: 0; } }
+  @keyframes card-in { from { opacity: 0; transform: translateY(26px) scale(.97); } }
+  #card.unlock .stamp { animation: stamp .5s .5s cubic-bezier(.2,1.8,.4,1) backwards; }
+  @keyframes stamp { from { opacity: 0; transform: scale(2.4) rotate(-7deg); } }
+  #card.unlock .hero img { animation: reveal 1s .2s ease-out backwards; }
+  @keyframes reveal { from { opacity: 0; transform: scale(1.02); filter: sepia(.55) contrast(.85); } }
+
+  /* ---- 高解析全螢幕檢視 ---- */
+  #lightbox {
+    position: fixed; inset: 0; z-index: 30; display: none;
+    background: rgba(24,24,22,.96); overflow: auto; cursor: zoom-out;
+  }
+  #lightbox.active { display: flex; }
+  #lightbox img {
+    max-width: 100%; max-height: 100%; margin: auto; display: block;
+    cursor: zoom-in;
+  }
+  #lightbox.zoomed { display: block; }
+  #lightbox.zoomed img { max-width: none; max-height: none; margin: 0; cursor: zoom-out; }
+  #lightbox .tip {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    color: rgba(230,216,183,.85); font-size: 12px; letter-spacing: 1px;
+    pointer-events: none;
+  }
+  #card .desc { font-size: 15px; line-height: 1.9; }
+  #card .credit { font-size: 11px; color: #716d5f; margin-top: 10px; line-height: 1.6; }
+
+  /* ---- zukan grid ---- */
+  #zukan { padding: 14px; }
+  #zukan-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;
+  }
+  .zcard {
+    border: 2px solid var(--ink); border-radius: 3px; background: var(--washi);
+    cursor: pointer; padding: 0; font: inherit; text-align: center;
+  }
+  .zcard img { width: 100%; display: block; image-rendering: pixelated; }
+  .zcard .zname { padding: 5px; font-size: 13px; }
+  .zcard.locked { opacity: .5; cursor: default; }
+  .zcard.locked .ph {
+    aspect-ratio: 320/216; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: var(--washi-dark); background: var(--indigo);
+  }
+  #zukan .foot { margin-top: 18px; font-size: 12px; color: #716d5f; }
+  #zukan .foot button { font-size: 12px; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>東海道五十三次 <span class="sub">像素道中記・日本橋→京師</span></h1>
+  <div class="hud">
+    <span id="day-count"></span>
+    <button id="btn-bgm" title="背景音樂開關">♪</button>
+    <button id="btn-zukan">圖鑑 <span id="count">0/11</span></button>
+  </div>
+</header>
+
+<div id="map" class="view active">
+  <div id="map-scroll"><div id="map-wrap">
+    <img src="game-assets/overworld.jpg" alt="東海道名所一覽">
+  </div></div>
+</div>
+
+<div id="scene" class="view">
+  <div id="scene-title"></div>
+  <div><span id="day-banner"></span></div>
+  <div id="scene-wrap">
+    <img id="scene-img" src="" alt="" draggable="false">
+    <div id="loupe"></div>
+  </div>
+  <div id="detail-list"></div>
+  <div class="btn-row">
+    <button id="btn-back">← 回地圖</button>
+    <button id="btn-flip" style="display:none">看像素版</button>
+  </div>
+</div>
+
+<div id="zukan" class="view">
+  <div class="emaki-bar" style="padding:0 0 10px">
+    <button id="btn-zukan-back">← 回地圖</button>
+  </div>
+  <div id="zukan-grid"></div>
+  <div class="foot">
+    畫作皆為 public domain。像素版由真跡掃描以 14 色浮世繪色盤量化生成。
+    <button id="btn-emaki" style="display:none">旅之繪卷</button>
+    <button id="btn-reset">重新啟程</button>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="card">
+    <div class="stamp" id="card-stamp"></div>
+    <h2 id="card-title"></h2>
+    <figure class="hero">
+      <img id="card-img" src="" alt="真跡">
+      <figcaption id="card-cap"></figcaption>
+    </figure>
+    <p class="desc" id="card-desc"></p>
+    <p class="credit" id="card-credit"></p>
+    <div class="btn-row">
+      <button id="card-prev-nav">‹ 前站</button>
+      <button id="card-close">關閉</button>
+      <button id="card-flip">看像素版</button>
+      <button id="card-next" class="primary">下一站 →</button>
+      <button id="card-next-nav">後站 ›</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <img id="lightbox-img" src="" alt="高解析真跡">
+  <div class="tip">點圖放大細節・點背景關閉</div>
+</div>
+
+<div id="emaki" class="view">
+  <div class="emaki-bar">
+    <button id="btn-emaki-back">← 回圖鑑</button>
+    <button id="btn-emaki-play">▶ 自動展卷</button>
+    <span class="emaki-tip">繪卷由右向左展讀（日本橋 → 京師）・點畫可開圖鑑卡</span>
+  </div>
+  <div id="emaki-scroll"></div>
+</div>
+
+<div id="finale">
+  <div id="finale-card">
+    <div class="fin-sub">東海道五十三次</div>
+    <div class="fin-title">完歩之證</div>
+    <p class="fin-days" id="fin-days"></p>
+    <div class="fin-sub">雅號授與</div>
+    <div class="fin-gou" id="fin-gou"></div>
+    <button id="finale-dl">下載完歩證</button>
+    <button id="finale-close">禮成</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ponytail: 站點/細節座標為格線疊圖目測值，存於 data，可校正不動程式
+const STATIONS = [
+  { slug:"01-nihonbashi", ja:"日本橋", pic:"朝之景", map:[.955,.955],
+    details:[[.55,.08,"行列先頭的毛槍"],[.30,.68,"魚河岸的挑夫"],[.83,.72,"木戶旁的白狗"]],
+    desc:"東海道起點。晨光中大名行列正要過橋，橋下魚河岸的魚販挑著新鮮漁獲——江戶的一天從這裡開始。",
+    credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
+  { slug:"02-shinagawa", ja:"品川", pic:"日之出", map:[.885,.93],
+    details:[[.10,.55,"灣內的千石船"],[.31,.62,"揚帆的漁舟"],[.55,.87,"街上的行列隊尾"]],
+    desc:"江戶出城第一宿。海灣停滿貨船，行列隊伍沿著海岸茶屋前行，旭日初昇。",
+    credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
+  { slug:"03-kawasaki", ja:"川崎", pic:"六郷渡舟", map:[.80,.925],
+    details:[[.245,.75,"撐篙的船頭"],[.87,.42,"遠方的富士"],[.42,.66,"對岸的馬子與馬"]],
+    desc:"六郷川上無橋，旅人全靠渡船過河。船頭一篙撐開水面，對岸村落炊煙裊裊，遠方富士靜立。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"04-kanagawa", ja:"神奈川", pic:"台之景", map:[.72,.94],
+    details:[[.17,.72,"沖上的帆船"],[.87,.48,"茶屋的掛招牌"],[.28,.87,"灣上的小渡舟"]],
+    desc:"台地上茶屋一字排開，女中拉客聲不絕；坡下就是橫濱開港前的寧靜海灣，白帆點點。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"05-hodogaya", ja:"保土ヶ谷", pic:"新町橋", map:[.64,.925],
+    details:[[.76,.72,"橋上的駕籠行列"],[.30,.28,"並木老樹"],[.445,.68,"店先的人影"]],
+    desc:"新町橋畔茶屋林立，一隊大名行列正魚貫過橋——此地即今日橫濱市保土ヶ谷區。",
+    credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
+  { slug:"06-totsuka", ja:"戸塚", pic:"元町別道", map:[.565,.945],
+    details:[[.245,.33,"「こめや」招牌"],[.35,.68,"下馬的旅人"],[.055,.75,"迎客的茶屋女"]],
+    desc:"旅人翻身下馬，茶屋「こめや」招牌高掛。江戶清晨出發的旅人，多在戸塚歇第一夜。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"07-fujisawa", ja:"藤沢", pic:"遊行寺", map:[.49,.93],
+    details:[[.27,.55,"江之島一の鳥居"],[.66,.28,"山腰的遊行寺"],[.12,.75,"過橋的參拜客"]],
+    desc:"時宗總本山遊行寺山門在望，橋前矗立江之島參道的一の鳥居，香客絡繹於途。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"08-hiratsuka", ja:"平塚", pic:"縄手道", map:[.42,.95],
+    details:[[.38,.30,"渾圓的高麗山"],[.58,.42,"富士雪頂"],[.54,.78,"疾走的飛腳"]],
+    desc:"之字形的田間道上，飛腳與駕籠擦身而過；圓錐狀的高麗山盤踞正面，富士雪頂在其後微露。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"09-oiso", ja:"大磯", pic:"虎ヶ雨", map:[.35,.93],
+    details:[[.275,.66,"雨中疾行的旅人"],[.475,.79,"路旁的藁塚"],[.86,.78,"蓑笠的馬上旅人"]],
+    desc:"初夏細雨斜織。「虎ヶ雨」典出曾我兄弟仇討——傳說此雨是虎御前之淚。雨中旅人低頭疾行入宿。",
+    credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
+  { slug:"10-odawara", ja:"小田原", pic:"酒匂川", map:[.27,.955],
+    details:[[.36,.75,"肩扛駕籠的川越人足"],[.63,.66,"對岸的行列"],[.68,.22,"箱根連山"]],
+    desc:"酒匂川不架橋，全憑川越人足肩扛徒涉。背後箱根連山層疊蒼茫，小田原城隱約可見。",
+    credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
+  { slug:"11-hakone", ja:"箱根", pic:"湖水図", map:[.19,.92],
+    details:[[.13,.75,"蘆之湖"],[.67,.83,"山腹的行列"],[.21,.47,"遠望的富士"]],
+    desc:"全系列最險峻的一幅。嶙峋山塊拔地而起，蘆之湖靜臥其下，大名行列在山腹小徑上蜿蜒成一線。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"12-mishima", ja:"三島", pic:"朝霧", map:[.036,.395],
+    details:[[.63,.42,"霧中的鳥居"],[.30,.42,"馬上的旅人"],[.09,.50,"霧中遠去的人影"]],
+    desc:"晨霧未散，三嶋大社的鳥居只剩青灰剪影。旅人跨馬出發，駕籠擔夫縮著肩前行——翻越箱根峠後的第一宿。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"13-numazu", ja:"沼津", pic:"黄昏図", map:[.160,.330],
+    details:[[.52,.36,"初昇的滿月"],[.50,.79,"背著天狗面的參拜者"],[.315,.60,"通往村落的小橋"]],
+    desc:"滿月初昇，黃昏的狩野川畔。背著天狗面具的金毘羅參拜者與旅人默默趕往宿場——全系列唯一的月夜場景。",
+    credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
+  { slug:"14-hara", ja:"原", pic:"朝之富士", map:[.049,.303],
+    details:[[.60,.07,"突破畫框的山頂"],[.63,.58,"田中的白鶴"],[.27,.62,"仰望的藍衣旅婦"]],
+    desc:"富士山頂突破畫框——廣重全系列最大膽的構圖。晨光中雪嶺高聳，田間白鶴悠然踱步，旅婦仰首而望。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"15-yoshiwara", ja:"吉原", pic:"左富士", map:[.127,.206],
+    details:[[.28,.28,"左側的富士"],[.64,.63,"馬背上打盹的孩子"],[.55,.77,"松並木旁的立牌"]],
+    desc:"松並木夾道，馬背上的孩童昏昏欲睡。東海道一路富士皆在右手，唯獨吉原這段彎道富士現於左——「左富士」名所。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"16-kanbara", ja:"蒲原", pic:"夜之雪", map:[.098,.096],
+    details:[[.38,.71,"撐傘的夜行人"],[.69,.69,"蓑衣拄杖的旅人"],[.55,.45,"雪深的茅屋頂"]],
+    desc:"全系列最負盛名的雪景。夜幕無星，厚雪覆村，三個旅人縮著身子各自趕路——現實的蒲原其實少雪，這是廣重的詩意虛構。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"17-yui", ja:"由比", pic:"薩埵嶺", map:[.171,.100],
+    details:[[.13,.20,"崖上眺望的旅人"],[.38,.44,"灣對岸的富士"],[.84,.56,"海上的帆影"]],
+    desc:"薩埵峠的斷崖險道。旅人扶樹俯瞰腳下的駿河灣，白帆點點，富士雪嶺隔灣靜立——全系列視野最壯闊的一幅。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"18-okitsu", ja:"興津", pic:"興津川", map:[.359,.186],
+    details:[[.61,.57,"騎馬渡川的力士"],[.47,.80,"抬駕籠的人足"],[.24,.33,"臨水的岩崖老松"]],
+    desc:"興津川淺灘。兩位相撲力士一騎馬一乘駕籠渡川——馬被壓得低頭，人足咬牙硬撐，全系列難得的幽默場面。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"19-ejiri", ja:"江尻", pic:"三保遠望", map:[.277,.210],
+    details:[[.30,.83,"港內林立的桅杆"],[.62,.55,"三保松原的沙嘴"],[.78,.45,"遠海的白帆"]],
+    desc:"從江尻高處遠望三保松原。港內桅杆如林，外海白帆點點，傳說天女羽衣的松原沙嘴橫臥灣中。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"20-fuchu", ja:"府中", pic:"安倍川", map:[.246,.306],
+    details:[[.585,.74,"輦台上的駕籠"],[.15,.55,"馱貨渡川的馬"],[.40,.50,"涉水的川越人足"]],
+    desc:"安倍川禁架橋樑，全靠川越人足。輦台上的駕籠客、人足肩上的旅人、馱貨的馬——各種渡川方式一景全收。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"21-mariko", ja:"鞠子", pic:"名物茶店", map:[.346,.357],
+    details:[[.53,.76,"吃とろろ汁的旅人"],[.64,.74,"背子的茶店女"],[.42,.35,"早春的白梅"]],
+    desc:"丸子宿名物とろろ汁。茅簷茶屋前旅人埋頭喝湯，店婦背著孩子招呼，早春白梅初綻——芭蕉也詠過這碗湯。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"22-okabe", ja:"岡部", pic:"宇津之山", map:[.409,.473],
+    details:[[.53,.63,"峽谷間的激流"],[.43,.85,"負薪的樵夫"],[.37,.53,"窄道上的旅人"]],
+    desc:"宇津ノ谷峠。兩壁青山夾出一線窄道，激流沿路奔下，樵夫負薪歸來——伊勢物語「蔦の細道」的故地。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"23-fujieda", ja:"藤枝", pic:"人馬継立", map:[.450,.552],
+    details:[[.30,.62,"問屋場前的馱馬"],[.68,.35,"戴笠的宿役人"],[.94,.55,"堆疊的貨箱"]],
+    desc:"藤枝問屋場的人馬交接。挑夫卸貨、馬子換馬、宿役人清點——東海道驛傳制度運作的第一手紀錄。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"24-shimada", ja:"島田", pic:"大井川駿岸", map:[.520,.626],
+    details:[[.28,.44,"河原集結的行列"],[.35,.10,"大井川本流"],[.58,.75,"河原上的孤松"]],
+    desc:"「越すに越されぬ大井川」——無橋無渡船，大名行列在駿河岸的河原上集結，等川越人足肩扛徒涉。",
+    credit:"掃描：Museum of Fine Arts Boston（public domain）· via Wikimedia Commons" },
+  { slug:"25-kanaya", ja:"金谷", pic:"大井川遠岸", map:[.544,.701],
+    details:[[.60,.60,"渡川的人足行列"],[.18,.85,"輦台上的駕籠"],[.68,.30,"山腹的金谷坂道"]],
+    desc:"金谷側遠岸。行列正涉過大井川主流，對岸山腹的坂道通往金谷宿——過了這條川，駿河便在身後。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"26-nissaka", ja:"日坂", pic:"佐夜ノ中山", map:[.655,.736],
+    details:[[.49,.83,"路中的夜泣石"],[.58,.77,"圍觀怪石的旅人"],[.80,.50,"陡坂上攀行的旅人"]],
+    desc:"小夜の中山峠。路中央躺著「夜泣石」——傳說被斬孕婦的冤魂夜夜自石中啼哭，旅人紛紛駐足；兩側坂道陡得誇張。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"27-kakegawa", ja:"掛川", pic:"秋葉山遠望", map:[.761,.731],
+    details:[[.655,.255,"斷線飛走的風箏"],[.33,.62,"橋上頂風的旅人"],[.83,.18,"遠方的秋葉山"]],
+    desc:"塩井川原的大池橋。旅人頂著遠州名物的強風過橋，一只斷線風箏翻飛遠去，防火之神秋葉山在霞中聳立。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"28-fukuroi", ja:"袋井", pic:"出茶屋ノ図", map:[.702,.659],
+    details:[[.29,.68,"煮茶的茶屋老婦"],[.40,.66,"歇肩抽菸的挑夫"],[.85,.36,"高札上的燕子"]],
+    desc:"路邊簡陋的出茶屋。老婦蹲著煽火煮茶，挑夫放下擔子借火抽菸——全系列最小的宿場，卻是最悠閒的一幅。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"29-mitsuke", ja:"見附", pic:"天龍川図", map:[.629,.623],
+    details:[[.47,.62,"持篙的船夫"],[.56,.72,"舟中的紫衣客"],[.35,.42,"霧中對岸的人馬"]],
+    desc:"天龍川渡舟。沙洲間霧氣迷濛，船夫持篙待發，對岸渡口人馬只剩淡墨剪影——全系列最寂靜的水景。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"30-hamamatsu", ja:"濱松", pic:"冬枯ノ図", map:[.562,.530],
+    details:[[.36,.70,"焚火取暖的農人"],[.52,.28,"參天的巨松"],[.63,.62,"駐足的旅人"]],
+    desc:"冬枯的原野。巨松下農人焚火取暖，白煙裊裊升入灰空，遠處濱松城郭隱約可見——蕭瑟入骨的冬景。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"31-maisaka", ja:"舞坂", pic:"今切真景", map:[.539,.478],
+    details:[[.52,.60,"湖上的漁舟"],[.865,.40,"遠望最後的富士"],[.13,.80,"近岸的杭列"]],
+    desc:"濱名湖今切渡口。漁舟點點掠過湖面，畫面右緣富士雪頂最後一次現身——過了舞坂，東海道就再看不見富士了。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"32-arai", ja:"荒井", pic:"渡舟ノ図", map:[.635,.475],
+    details:[[.21,.64,"伸懶腰的船夫"],[.52,.18,"御座船的毛槍羽飾"],[.82,.47,"對岸的新居關所"]],
+    desc:"今切渡海上一里半。大名的御座船緩緩橫渡濱名湖，前船船夫伸腰打呵欠——對岸就是東海道盤查最嚴的新居關所。",
+    credit:"掃描：public domain · via Wikimedia Commons" },
+  { slug:"33-shirasuka", ja:"白須賀", pic:"汐見阪図", map:[.707,.477],
+    details:[[.70,.72,"汐見坂的大名行列"],[.30,.63,"遠州灘的白帆"],[.62,.25,"坂上的黑松"]],
+    desc:"汐見坂上俯瞰遠州灘。大名行列沿坡道蜿蜒而下，眼底松原白浪、帆影點點——「望汐之坂」名符其實。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"34-futagawa", ja:"二川", pic:"猿ヶ馬場", map:[.774,.472],
+    details:[[.47,.74,"賣藝的瞽女三人組"],[.13,.60,"名物柏餅茶屋"],[.60,.28,"荒原上的矮松"]],
+    desc:"猿馬場的荒涼原野，矮松點點。三位彈三味線的瞽女結伴趕路，路旁茶屋掛著名物柏餅的招牌。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"35-yoshida", ja:"吉田", pic:"豐川橋", map:[.841,.506],
+    details:[[.85,.32,"天守鷹架上的工匠"],[.15,.67,"豐川橋上的旅人"],[.28,.76,"川面的小舟"]],
+    desc:"豐川橋畔，吉田城天守正在修繕——鷹架上的工匠停下手邊活，悠然遠眺。橋、城、川舟一景三收。",
+    credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
+  { slug:"36-goyu", ja:"御油", pic:"旅人留女", map:[.912,.540],
+    details:[[.42,.60,"強拉客人的留女"],[.63,.60,"持杖圍觀的宿場女"],[.85,.56,"旅籠內的食客"]],
+    desc:"暮色中的宿場街，留女死命把旅人往自家旅籠裡拖——招攬過了頭的「拉客大戰」，全系列最幽默的一幅。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"37-akasaka", ja:"赤坂", pic:"旅舎招婦ノ図", map:[.963,.484],
+    details:[[.585,.52,"中庭的蘇鉄"],[.17,.55,"洗足的旅人"],[.83,.62,"對鏡梳妝的招婦"]],
+    desc:"旅籠之夜。中庭蘇鉄婆娑，左邊旅人洗腳歇息，右邊飯盛女對鏡梳妝——同一屋簷下的兩個世界，與御油成對之作。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"38-fujikawa", ja:"藤川", pic:"棒鼻ノ図", map:[.912,.452],
+    details:[[.43,.40,"宿界的棒鼻標柱"],[.28,.72,"跪迎行列的村人"],[.11,.80,"路旁的小狗"]],
+    desc:"宿場入口的棒鼻界標前，村人跪迎將軍獻馬的八朔御馬行列——連路旁的小狗也湊著看熱鬧。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"39-okazaki", ja:"岡崎", pic:"矢矧之橋", map:[.860,.417],
+    details:[[.30,.63,"矢矧橋上的行列"],[.78,.47,"岡崎城天守"],[.66,.30,"藍靛遠山"]],
+    desc:"東海道第一長橋矢矧橋，大名行列魚貫而過，岡崎城天守聳立松間——德川家康誕生之城。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"40-chiryu", ja:"池鯉鮒", pic:"首夏馬市", map:[.782,.401],
+    details:[[.52,.18,"馬市的大松"],[.20,.63,"放牧的馬群"],[.62,.72,"樹蔭下議價的馬販"]],
+    desc:"初夏馬市。原野上馬群繫於繩柵之間，馬販聚在樹蔭下議價——池鯉鮒宿每年首夏的盛事。",
+    credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
+  { slug:"41-narumi", ja:"鳴海", pic:"名物有松絞", map:[.722,.362],
+    details:[[.25,.55,"藍暖簾的絞染店"],[.68,.56,"騎馬的旅人"],[.48,.76,"歇下的駕籠"]],
+    desc:"鳴海宿的絞染店街。藍暖簾白字寫著「有松絞」，騎馬與乘駕籠的旅人沿街選購名物——江戶人最愛的伴手禮。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"42-miya", ja:"宮", pic:"熱田神事", map:[.794,.339],
+    details:[[.35,.55,"拉曳神馬的壯漢"],[.84,.45,"熱田神宮大鳥居"],[.60,.30,"競奔的第二隊"]],
+    desc:"熱田神宮的馬追神事。兩隊壯漢拉著神馬狂奔競速，大鳥居下塵土飛揚——尾張最熱血的祭典之夜。",
+    credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
+  { slug:"43-kuwana", ja:"桑名", pic:"七里渡口", map:[.871,.300],
+    details:[[.47,.62,"收帆入港的渡船"],[.68,.42,"桑名城的石垣"],[.13,.42,"外海的歸帆"]],
+    desc:"宮到桑名無陸路，全靠「七里渡」海路。渡船收帆入港，桑名城石垣聳立岸邊——伊勢路的門戶。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"44-yokkaichi", ja:"四日市", pic:"三重川", map:[.940,.291],
+    details:[[.17,.84,"被風吹跑的斗笠"],[.31,.70,"追帽的旅人"],[.52,.28,"狂風中的大柳樹"]],
+    desc:"三重川畔狂風大作。旅人追著被吹跑的斗笠狼狽奔跑，大柳樹被吹得東倒西歪——全系列最有動感的一幅。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"45-ishiyakushi", ja:"石藥師", pic:"石藥師寺", map:[.972,.232],
+    details:[[.22,.56,"石藥師寺的山門"],[.55,.25,"暮色的青山"],[.72,.71,"田里的稻束"]],
+    desc:"暮色下的石藥師寺山門靜立林間，田裡稻束成排、青山如黛——收割時節的伊勢田園風景。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"46-shono", ja:"庄野", pic:"白雨", map:[.911,.190],
+    details:[[.33,.62,"冒雨抬轎的人足"],[.63,.76,"撐傘疾奔的旅人"],[.60,.32,"風雨中的竹林"]],
+    desc:"「白雨」即驟雨。抬轎的往坡上逃、撐傘的往坡下奔，竹林在風雨中翻倒——廣重公認的最高傑作。",
+    credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
+  { slug:"47-kameyama", ja:"龜山", pic:"雪晴", map:[.850,.176],
+    details:[[.62,.54,"雪坡上攀行的行列"],[.78,.12,"崖頂的龜山城"],[.52,.33,"雪覆的松林"]],
+    desc:"雪後初晴。大名行列沿陡坡攀向崖頂的龜山城，朝陽把雪坡染成粉紅——全系列最凜冽的構圖之一。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"48-seki", ja:"関", pic:"本陣早立", map:[.775,.182],
+    details:[[.13,.42,"梅鉢紋的幔幕"],[.45,.52,"整裝的隨從"],[.29,.79,"曉暗中的燈籠"]],
+    desc:"天未亮的関宿本陣。梅鉢紋幔幕下隨從整裝、燈籠未熄——大名一行摸黑出發的清晨即景。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"49-sakanoshita", ja:"坂之下", pic:"筆捨嶺", map:[.701,.178],
+    details:[[.25,.55,"筆捨嶺的飛瀑"],[.70,.52,"茶屋前眺望的旅人"],[.60,.78,"馱薪的黑牛"]],
+    desc:"傳說狩野元信面對此嶺自嘆畫不出、擲筆而去——「筆捨嶺」。茶屋歇腳的旅人隔谷眺望飛瀑奇峰。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"50-tsuchiyama", ja:"土山", pic:"春之雨", map:[.588,.194],
+    details:[[.35,.82,"春雨中過橋的行列"],[.28,.28,"雨中的杉木立"],[.74,.60,"奔騰的山溪"]],
+    desc:"春雨綿綿的鈴鹿山麓。大名行列低頭撐傘過橋，溪水暴漲奔騰——「坂は照る照る鈴鹿は曇る、あいの土山雨が降る」。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"51-minakuchi", ja:"水口", pic:"名物干瓢", map:[.530,.162],
+    details:[[.20,.62,"削瓢的農家女"],[.40,.55,"竿上晾曬的干瓢"],[.57,.52,"路過的旅人"]],
+    desc:"水口名物干瓢（葫蘆乾）。農家女削瓢成條、掛竿晾曬，旅人好奇駐足——近江街道的日常風景。",
+    credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
+  { slug:"52-ishibe", ja:"石部", pic:"目川ノ里", map:[.473,.118],
+    details:[[.35,.58,"目川的田樂茶屋"],[.28,.85,"嬉鬧趕路的旅人"],[.45,.30,"遠望的三上山"]],
+    desc:"目川立場的田樂茶屋前，旅人成群嬉鬧趕路——離京都只剩兩日路程，連腳步都輕快了起來。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"53-kusatsu", ja:"草津", pic:"名物立場", map:[.532,.089],
+    details:[[.55,.72,"飛奔的早駕籠"],[.40,.28,"姥ヶ餅茶屋的食客"],[.13,.38,"簷下卸擔的挑夫"]],
+    desc:"草津名物姥ヶ餅屋前，「早駕籠」呼嘯而過——東海道與中山道在此交會，人聲鼎沸的交通樞紐。",
+    credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
+  { slug:"54-otsu", ja:"大津", pic:"走井茶店", map:[.694,.061],
+    details:[[.72,.68,"米俵滿載的牛車"],[.12,.85,"走井湧泉"],[.35,.72,"走井茶店的店先"]],
+    desc:"大津走井茶店，名水湧泉清冽。滿載米俵的牛車隆隆駛過——琵琶湖物資進京的最後一程。",
+    credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
+  { slug:"55-kyoto", ja:"京師", pic:"三条大橋", map:[.883,.080],
+    details:[[.72,.58,"橋上打傘的都人"],[.35,.72,"鴨川上的橋腳"],[.55,.18,"東山連峰"]],
+    desc:"終點三条大橋。鴨川橋上都人雅士往來，東山連峰橫臥天際——五十三次道中，在此圓滿結願。",
+    credit:"掃描：Museum of Fine Arts Boston（public domain）· via Wikimedia Commons" },
+];
+
+// 道中事件：[權重, 加算日數, 文字]
+const EVENTS = [
+  [5, 0, "天朗氣清，一路順風。"],
+  [2, 0, "遇同路的講談師，說書解悶，不知不覺就到了。"],
+  [1, 0, "順路的馬子讓你搭了一程，腳程飛快。"],
+  [2, 1, "午後驟雨，躲進路旁茶屋避了半日。"],
+  [2, 1, "草鞋磨穿，尋鞋店耽擱了時辰。"],
+  [1, 1, "關所查驗通行手形，排了長隊。"],
+  [1, 2, "川止め！河水暴漲禁渡，只得在旅籠等水退。"],
+];
+const HIT_R = 0.075;   // 命中半徑（相對場景寬）
+const MISS_HINT = 3;   // 失手幾次後給提示圈
+
+const KEY = "tokaido-progress-v2";
+let state = load();
+let current = -1;
+let misses = 0;
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && s.found) return s;
+  } catch (e) {}
+  return { found: {}, visited: [], days: 1, log: "自日本橋出發，天色未明。" };
+}
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+const foundOf = s => state.found[s.slug] || [];
+const isDone = s => foundOf(s).length === s.details.length;
+const doneCount = () => STATIONS.filter(isDone).length;
+
+const $ = id => document.getElementById(id);
+function show(view) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $(view).classList.add("active");
+}
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 1800);
+}
+function updateHud() {
+  $("count").textContent = `${doneCount()}/${STATIONS.length}`;
+  $("day-count").textContent = `道中第 ${state.days} 日`;
+}
+
+/* ---- map ---- */
+function buildMap() {
+  const wrap = $("map-wrap");
+  wrap.querySelectorAll(".node, .node-label").forEach(n => n.remove());
+  STATIONS.forEach((s, i) => {
+    const done = isDone(s);
+    const reachable = i === 0 || isDone(STATIONS[i-1]);
+    const b = document.createElement("button");
+    b.className = "node " + (done ? "done" : reachable ? "next" : "locked");
+    b.textContent = i + 1;
+    b.style.left = s.map[0]*100 + "%";
+    b.style.top = s.map[1]*100 + "%";
+    if (done || reachable) b.onclick = () => openScene(i);
+    wrap.appendChild(b);
+    const l = document.createElement("span");
+    l.className = "node-label";
+    l.textContent = s.ja;
+    l.style.left = s.map[0]*100 + "%";
+    l.style.top = s.map[1]*100 + "%";
+    wrap.appendChild(l);
+  });
+  updateHud();
+}
+
+/* ---- travel ---- */
+function travelTo(i) {
+  const s = STATIONS[i];
+  if (state.visited.includes(s.slug)) return;
+  state.visited.push(s.slug);
+  if (i > 0) {
+    let pool = [];
+    EVENTS.forEach(([w, d, t]) => { for (let k = 0; k < w; k++) pool.push([d, t]); });
+    const [extra, text] = pool[Math.floor(Math.random() * pool.length)];
+    state.days += 1 + extra;
+    state.log = text + (extra > 0 ? `（多耗 ${extra} 日）` : "");
+  }
+  save();
+}
+
+/* ---- scene ---- */
+function openScene(i) {
+  current = i;
+  misses = 0;
+  travelTo(i);
+  const s = STATIONS[i];
+  $("scene-title").innerHTML = `第${i+1}站　${s.ja}<small>${s.pic}</small>`;
+  $("day-banner").textContent = `第 ${state.days} 日｜${state.log}`;
+  setSceneImage(isDone(s));   // 過關的站直接展示真跡
+  $("btn-flip").style.display = isDone(s) ? "" : "none";
+  renderMarks();
+  renderDetailList();
+  updateHud();
+  show("scene");
+}
+// showReal=true 顯示廣重真跡，false 顯示像素版（兩者同裁切、座標共用）
+function setSceneImage(showReal) {
+  const s = STATIONS[current];
+  const img = $("scene-img");
+  img.src = showReal
+    ? `game-assets/originals/${s.slug}.jpg`
+    : `game-assets/scenes/${s.slug}.png`;
+  img.classList.toggle("real", showReal);
+  $("btn-flip").textContent = showReal ? "看像素版" : "看真跡";
+}
+$("btn-flip").onclick = () =>
+  setSceneImage(!$("scene-img").classList.contains("real"));
+function renderMarks() {
+  const s = STATIONS[current];
+  const wrap = $("scene-wrap");
+  wrap.querySelectorAll(".found-mark, .hint-ring, .ripple").forEach(n => n.remove());
+  foundOf(s).forEach(di => {
+    const [x, y] = s.details[di];
+    const m = document.createElement("div");
+    m.className = "found-mark";
+    m.style.left = x*100 + "%";
+    m.style.top = y*100 + "%";
+    wrap.appendChild(m);
+  });
+}
+function renderDetailList() {
+  const s = STATIONS[current];
+  $("detail-list").innerHTML = "尋找：" + s.details.map(([,,name], di) =>
+    `<span class="d ${foundOf(s).includes(di) ? "got" : ""}">${name}</span>`).join("");
+}
+
+// 場景點擊（nx/ny 為 0–1 正規化座標）；具名函式方便測試
+function tapScene(nx, ny) {
+  const s = STATIONS[current];
+  if (isDone(s)) return false;   // 過關站是展示模式，不再判定
+  const img = $("scene-img");
+  // naturalWidth：clientHeight 在圖片載入完成前是 0，會讓 Y 軸判定失效
+  const aspect = img.naturalWidth ? img.naturalHeight / img.naturalWidth : 0.67;
+  const found = foundOf(s);
+  for (let di = 0; di < s.details.length; di++) {
+    if (found.includes(di)) continue;
+    const [x, y, name] = s.details[di];
+    const dist = Math.hypot(nx - x, (ny - y) * aspect);
+    if (dist < HIT_R) {
+      state.found[s.slug] = [...found, di];
+      save();
+      misses = 0;
+      renderMarks();
+      renderDetailList();
+      toast(`發現「${name}」`);
+      if (isDone(s)) setTimeout(() => { openCard(current, true); updateHud(); }, 900);
+      return true;
+    }
+  }
+  // miss
+  const wrap = $("scene-wrap");
+  const r = document.createElement("div");
+  r.className = "ripple";
+  r.style.left = nx*100 + "%";
+  r.style.top = ny*100 + "%";
+  wrap.appendChild(r);
+  setTimeout(() => r.remove(), 550);
+  if (++misses >= MISS_HINT) {
+    misses = 0;
+    const unfound = s.details.filter((_, di) => !found.includes(di));
+    const [hx, hy] = unfound[Math.floor(Math.random() * unfound.length)];
+    const h = document.createElement("div");
+    h.className = "hint-ring";
+    h.style.left = hx*100 + "%";
+    h.style.top = hy*100 + "%";
+    wrap.appendChild(h);
+    setTimeout(() => h.remove(), 2500);
+  }
+  return false;
+}
+window.tapScene = tapScene;
+
+// 點擊掛在 wrap、座標固定以 img 計算：就算命中到覆蓋層也不會拿錯 rect
+$("scene-wrap").addEventListener("click", e => {
+  const r = $("scene-img").getBoundingClientRect();
+  const nx = (e.clientX - r.left) / r.width;
+  const ny = (e.clientY - r.top) / r.height;
+  if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) tapScene(nx, ny);
+});
+
+/* ---- 放大鏡（僅滑鼠裝置）---- */
+// mousemove 只做 transform + backgroundPosition（不觸發 layout），rAF 節流；
+// 背景圖與尺寸每站設一次，避免舊機器上滑鼠一動就整頁重繪卡死
+const LOUPE_ZOOM = 2.5, LOUPE_SIZE = 150;
+if (matchMedia("(hover: hover)").matches) {
+  const loupe = $("loupe"), img = $("scene-img");
+  let raf = 0, lastEvent = null;
+  function paintLoupe() {
+    raf = 0;
+    const e = lastEvent;
+    const r = img.getBoundingClientRect();
+    if (loupe._src !== img.src || loupe._w !== r.width) {
+      loupe._src = img.src;
+      loupe._w = r.width;
+      loupe.style.backgroundImage = `url("${img.src}")`;
+      loupe.style.backgroundSize = `${r.width*LOUPE_ZOOM}px ${r.height*LOUPE_ZOOM}px`;
+    }
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    loupe.style.display = "block";
+    loupe.style.transform =
+      `translate(${x - LOUPE_SIZE/2}px, ${y - LOUPE_SIZE/2}px)`;
+    loupe.style.backgroundPosition =
+      `${LOUPE_SIZE/2 - x*LOUPE_ZOOM}px ${LOUPE_SIZE/2 - y*LOUPE_ZOOM}px`;
+  }
+  img.addEventListener("mousemove", e => {
+    lastEvent = e;
+    if (!raf) raf = requestAnimationFrame(paintLoupe);
+  });
+  img.addEventListener("mouseleave", () => {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    loupe.style.display = "none";
+  });
+}
+
+/* ---- zukan card ---- */
+const RANKS = [[70, "飛腳級健腳！"], [85, "堂堂健腳旅人"], [100, "悠悠道中客"], [999, "道草三昧"]];
+let cardIdx = -1, cardShowPixel = false, cardBrowse = false;
+// 卡片主視覺：真跡為主角，像素版以按鈕切換（點圖開高解析檢視）
+function setCardImage() {
+  const s = STATIONS[cardIdx];
+  const img = $("card-img");
+  img.src = cardShowPixel
+    ? `game-assets/scenes/${s.slug}.png`
+    : `game-assets/originals/${s.slug}.jpg`;
+  img.classList.toggle("pixel", cardShowPixel);
+  $("card-cap").textContent = cardShowPixel
+    ? "像素道中（14 色浮世繪色盤）"
+    : "廣重真跡（保永堂版，約1833–34）・點圖看高解析";
+  $("card-flip").textContent = cardShowPixel ? "看真跡" : "看像素版";
+}
+function openCard(i, justUnlocked) {
+  cardIdx = i;
+  cardShowPixel = false;
+  const s = STATIONS[i];
+  let stamp = justUnlocked ? "— 圖鑑解鎖 —" : `第${i+1}站`;
+  if (justUnlocked && i === STATIONS.length - 1) {
+    const rank = RANKS.find(([d]) => state.days <= d)[1];
+    stamp = `— 抵達${s.ja}！道中 ${state.days} 日・${rank} —`;
+  }
+  $("card-stamp").textContent = stamp;
+  $("card-title").innerHTML = `${s.ja}<small>${s.pic}</small>`;
+  setCardImage();
+  $("card-desc").textContent = s.desc;
+  $("card-credit").textContent = s.credit;
+  // 終點京師：改為「完歩回顧」（圖鑑重開也能再看一次完歩式）
+  const last = i === STATIONS.length - 1;
+  $("card-next").textContent = last ? "完歩回顧 →" : "下一站 →";
+  $("card-next").style.display = (last ? isDone(s) : justUnlocked) ? "" : "none";
+  $("card-flip").style.display = justUnlocked ? "none" : "";   // 剛解鎖時不放「看像素版」，圖鑑回顧才提供
+  // 圖鑑瀏覽模式：前後站換頁（跳過未解鎖站），鍵盤 ←/→ 同步支援
+  cardBrowse = !justUnlocked;
+  $("card-prev-nav").style.display = cardBrowse ? "" : "none";
+  $("card-next-nav").style.display = cardBrowse ? "" : "none";
+  if (cardBrowse) {
+    $("card-prev-nav").disabled = cardNavTarget(-1) < 0;
+    $("card-next-nav").disabled = cardNavTarget(1) < 0;
+  }
+  $("card").classList.toggle("unlock", !!justUnlocked);
+  $("overlay").classList.add("active");
+}
+function cardNavTarget(dir) {   // 下一個已解鎖站的 index，無則 -1
+  let j = cardIdx + dir;
+  while (j >= 0 && j < STATIONS.length && !isDone(STATIONS[j])) j += dir;
+  return (j >= 0 && j < STATIONS.length) ? j : -1;
+}
+function cardNav(dir) {
+  if (!cardBrowse || !$("overlay").classList.contains("active")) return;
+  const j = cardNavTarget(dir);
+  if (j >= 0) openCard(j, false);
+}
+$("card-prev-nav").onclick = () => cardNav(-1);
+$("card-next-nav").onclick = () => cardNav(1);
+$("card-flip").onclick = () => { cardShowPixel = !cardShowPixel; setCardImage(); };
+
+/* ---- 高解析全螢幕檢視（fit ↔ 原寸兩段式）---- */
+$("card-img").onclick = () => {
+  const s = STATIONS[cardIdx];
+  const lbi = $("lightbox-img");
+  lbi.src = cardShowPixel
+    ? `game-assets/scenes/${s.slug}.png`
+    : `game-assets/large/${s.slug}.jpg`;
+  lbi.style.imageRendering = cardShowPixel ? "pixelated" : "";
+  $("lightbox").classList.remove("zoomed");
+  $("lightbox").classList.add("active");
+};
+$("lightbox-img").onclick = e => {
+  e.stopPropagation();
+  $("lightbox").classList.toggle("zoomed");
+};
+$("lightbox").onclick = () => $("lightbox").classList.remove("active");
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    if ($("lightbox").classList.contains("active")) $("lightbox").classList.remove("active");
+    else if ($("overlay").classList.contains("active")) $("card-close").click();
+    return;
+  }
+  // 圖鑑卡瀏覽：←/→ 換頁（高解析檢視開啟時不搶按鍵）
+  if (!$("lightbox").classList.contains("active")) {
+    if (e.key === "ArrowLeft") cardNav(-1);
+    if (e.key === "ArrowRight") cardNav(1);
+  }
+});
+$("card-close").onclick = () => {
+  $("overlay").classList.remove("active");
+  buildMap();
+  // 剛解鎖完關卡片：場景切換成真跡展示模式
+  if (current >= 0 && isDone(STATIONS[current]) && $("scene").classList.contains("active")) {
+    setSceneImage(true);
+    $("btn-flip").style.display = "";
+  }
+};
+/* ---- 下一站移動動畫：先回大地圖，旅人標記從當前站走到下一站再進場景 ---- */
+function travelAnim(from, to, done) {
+  const wrap = $("map-wrap");
+  const nodes = wrap.querySelectorAll(".node");
+  nodes[from]?.scrollIntoView({ block: "center", inline: "center" });
+  const m = document.createElement("div");
+  m.id = "traveler";
+  m.style.left = STATIONS[from].map[0]*100 + "%";
+  m.style.top = STATIONS[from].map[1]*100 + "%";
+  wrap.appendChild(m);
+  let ended = false;
+  const finish = () => {
+    if (ended) return;
+    ended = true;
+    m.remove();
+    document.removeEventListener("click", finish, true);
+    done();
+  };
+  document.addEventListener("click", finish, true);   // 點擊任意處可跳過
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    nodes[to]?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    m.style.left = STATIONS[to].map[0]*100 + "%";
+    m.style.top = STATIONS[to].map[1]*100 + "%";
+  }));
+  // 抵達後小點淡出（交棒給節點的燈塔脈動），停留 1.5 秒再進站
+  m.addEventListener("transitionend", () => {
+    m.style.opacity = 0;
+    setTimeout(finish, 1500);
+  }, { once: true });
+  setTimeout(finish, 4200);   // transitionend 沒觸發時的保險
+}
+$("card-next").onclick = () => {
+  $("overlay").classList.remove("active");
+  if (cardIdx === STATIONS.length - 1) return finaleSeq();
+  buildMap();
+  show("map");
+  travelAnim(current, current + 1, () => openScene(current + 1));
+};
+
+/* ---- 完歩式：全程回放 → 京師花火 → 雅號授與 ---- */
+const GOU = [[70, "韋駄天屋 疾風"], [85, "早駕籠屋 千里"], [100, "風流屋 雲水"], [999, "彌次喜多屋 道草"]];
+let finBusy = false;
+function finaleSeq() {
+  if (finBusy) return;
+  finBusy = true;
+  buildMap(); show("map");
+  const wrap = $("map-wrap");
+  const nodes = wrap.querySelectorAll(".node");
+  const labels = wrap.querySelectorAll(".node-label");
+  const lastIdx = STATIONS.length - 1;
+  nodes[0].scrollIntoView({ block: "center", inline: "center" });
+  const m = document.createElement("div");
+  m.id = "traveler";
+  m.style.transition = "left .42s linear, top .42s linear";   // 回放用快步調
+  m.style.left = STATIONS[0].map[0]*100 + "%";
+  m.style.top = STATIONS[0].map[1]*100 + "%";
+  wrap.appendChild(m);
+  const badge = document.createElement("div");
+  badge.id = "replay-days";
+  badge.textContent = "道中第 1 日";
+  document.body.appendChild(badge);
+  let i = 0, timer = 0;
+  const arrive = () => {
+    clearTimeout(timer);
+    m.remove(); badge.remove();
+    document.removeEventListener("click", arrive, true);
+    nodes[lastIdx].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    fireworks(nodes[lastIdx], finaleCard);
+  };
+  document.addEventListener("click", arrive, true);   // 點擊跳過回放
+  const hop = () => {
+    if (++i > lastIdx) { timer = setTimeout(arrive, 500); return; }
+    m.style.left = STATIONS[i].map[0]*100 + "%";
+    m.style.top = STATIONS[i].map[1]*100 + "%";
+    nodes[i].scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    labels[i].classList.add("lit");
+    setTimeout(() => labels[i].classList.remove("lit"), 650);
+    badge.textContent = `道中第 ${Math.max(1, Math.round(state.days * i / lastIdx))} 日`;
+    timer = setTimeout(hop, 460);
+  };
+  timer = setTimeout(hop, 700);
+}
+// 像素花火：京師節點上空連放五發
+function fireworks(node, done) {
+  const cv = document.createElement("canvas");
+  cv.id = "fw";
+  cv.width = innerWidth; cv.height = innerHeight;
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const COLORS = ["#f0c040", "#c03028", "#e6d8b7", "#f08030", "#3d606a"];
+  const parts = [];
+  const r = node.getBoundingClientRect();
+  const burst = (bx, by) => {
+    for (let k = 0; k < 28; k++) {
+      const a = Math.random() * Math.PI * 2, v = 1.5 + Math.random() * 2.5;
+      parts.push({ x: bx, y: by, vx: Math.cos(a)*v, vy: Math.sin(a)*v - 1,
+                   life: 55 + Math.random() * 30, c: COLORS[k % COLORS.length] });
+    }
+  };
+  [0, 420, 840, 1300, 1750].forEach((t, j) => setTimeout(() =>
+    burst(r.left + r.width/2 + (j ? (Math.random()-.5)*180 : 0),
+          r.top - 30 - Math.random()*90), t));
+  let alive = true;
+  setTimeout(() => { alive = false; cv.remove(); done(); }, 3200);
+  (function tick() {
+    if (!alive) return;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += .04; p.life--;
+      if (p.life > 0) {
+        ctx.globalAlpha = Math.min(1, p.life / 40);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(p.x, p.y, 4, 4);   // 方形粒子＝像素花火
+      }
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  })();
+}
+function finaleCard() {
+  finBusy = false;
+  if (!state.finishedOn) { state.finishedOn = Date.now(); save(); }   // 完歩日以首次抵達為準
+  const rank = RANKS.find(([d]) => state.days <= d)[1];
+  $("fin-days").textContent = `道中 ${state.days} 日・${rank}`;
+  $("fin-gou").textContent = GOU.find(([d]) => state.days <= d)[1];
+  $("finale").classList.add("active");
+}
+$("finale-close").onclick = () => $("finale").classList.remove("active");
+
+// 完歩證（通關文牒）：canvas 繪製，下載 PNG。具名函式方便測試
+async function drawCert() {
+  await document.fonts.load('96px "Yuji Boku"', "完歩之證");
+  const cv = document.createElement("canvas");
+  cv.width = 1400; cv.height = 900;
+  const x = cv.getContext("2d");
+  const B = '"Yuji Boku","Kaiti TC","Kaiti SC",serif';
+  // 和紙底＋雙線框，框間夾一圈青海波紋樣帶
+  x.fillStyle = "#e6d8b7"; x.fillRect(0, 0, 1400, 900);
+  x.save();
+  x.beginPath();
+  x.rect(46, 46, 1308, 808);
+  x.rect(96, 96, 1208, 708);
+  x.clip("evenodd");   // 只在外框與內框之間的帶狀區作畫
+  const R = 26;
+  for (let row = 0, gy = 30; gy < 880; row++, gy += R * .55) {
+    for (let gx = 20 + (row % 2 ? R : 0); gx < 1420; gx += R * 2) {
+      x.fillStyle = "#e6d8b7";
+      x.beginPath(); x.arc(gx, gy, R, 0, 7); x.fill();   // 先蓋掉上一列下緣 → 魚鱗狀扇形
+      x.strokeStyle = "rgba(35,63,77,.65)"; x.lineWidth = 1.6;
+      [R, R*.7, R*.4].forEach(r => { x.beginPath(); x.arc(gx, gy, r, 0, 7); x.stroke(); });
+    }
+  }
+  x.restore();
+  x.strokeStyle = "#2b2c2c";
+  x.lineWidth = 6; x.strokeRect(40, 40, 1320, 820);
+  x.lineWidth = 2; x.strokeRect(98, 98, 1204, 704);
+  x.fillStyle = "#2b2c2c"; x.textAlign = "center";
+  x.font = `30px ${B}`; x.fillText("東 海 道 五 十 三 次", 700, 150);
+  x.font = `96px ${B}`; x.fillText("完 歩 之 證", 700, 280);
+  x.fillRect(430, 320, 540, 2);
+  x.font = `40px ${B}`; x.fillText("自 日本橋　至 京師", 700, 410);
+  x.font = `36px ${B}`;
+  x.fillText(`道中 ${state.days} 日・${RANKS.find(([d]) => state.days <= d)[1]}`, 700, 480);
+  x.font = `28px ${B}`; x.fillText("雅 號 授 與", 700, 570);
+  x.fillStyle = "#9b564d";
+  x.font = `76px ${B}`; x.fillText(GOU.find(([d]) => state.days <= d)[1], 700, 665);
+  const dt = new Date(state.finishedOn || Date.now());
+  x.fillStyle = "#2b2c2c"; x.font = `28px ${B}`;
+  x.fillText(`${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日`, 700, 780);
+  // 朱印（微傾，蓋在右下）
+  x.save();
+  x.translate(1160, 700); x.rotate(-0.06);
+  x.fillStyle = "#c03028"; x.globalAlpha = .92;
+  x.fillRect(-62, -62, 124, 124);
+  x.globalAlpha = 1; x.fillStyle = "#e6d8b7";
+  x.textBaseline = "middle";
+  x.font = `46px ${B}`;
+  x.fillText("完", 0, -27);
+  x.fillText("歩", 0, 29);
+  x.restore();
+  return cv;
+}
+$("finale-dl").onclick = async () => {
+  const a = document.createElement("a");
+  a.download = "tokaido-kanposho.png";
+  a.href = (await drawCert()).toDataURL("image/png");
+  a.click();
+};
+
+/* ---- zukan grid ---- */
+function buildZukan() {
+  const g = $("zukan-grid");
+  g.innerHTML = "";
+  STATIONS.forEach((s, i) => {
+    const c = document.createElement("button");
+    const done = isDone(s);
+    c.className = "zcard" + (done ? "" : " locked");
+    c.innerHTML = done
+      ? `<img src="game-assets/scenes/${s.slug}.png" alt=""><div class="zname">${i+1}. ${s.ja}・${s.pic}</div>`
+      : `<div class="ph">？</div><div class="zname">${i+1}. ？？？</div>`;
+    if (done) c.onclick = () => openCard(i, false);
+    g.appendChild(c);
+  });
+  $("btn-emaki").style.display = STATIONS.every(isDone) ? "" : "none";   // 完歩後解鎖
+}
+
+/* ---- 旅之繪卷：像素場景連幅（DOM 正序＋row-reverse＝右起展卷）---- */
+const KANSUJI = n => {   // 1–99 → 漢數字（直書用）
+  const d = "一二三四五六七八九";
+  return (n >= 20 ? d[(n/10|0)-1] : "") + (n >= 10 ? "十" : "") + (n % 10 ? d[n%10-1] : "");
+};
+function buildEmaki() {
+  const sc = $("emaki-scroll");
+  sc.innerHTML = "";
+  const jiku = () => Object.assign(document.createElement("div"), { className: "ejiku" });
+  sc.appendChild(jiku());
+  STATIONS.forEach((s, i) => {
+    const p = document.createElement("div");
+    p.className = "epanel";
+    p.innerHTML = `<img src="game-assets/originals/${s.slug}.jpg" alt="${s.ja}" loading="lazy">
+      <div class="elabel">${KANSUJI(i+1)}　${s.ja}</div>`;
+    p.onclick = () => { emakiPlay(false); openCard(i, false); };
+    sc.appendChild(p);
+  });
+  sc.appendChild(jiku());
+}
+$("btn-emaki").onclick = () => { buildEmaki(); show("emaki"); };
+$("btn-emaki-back").onclick = () => { emakiPlay(false); buildZukan(); show("zukan"); };
+$("btn-zukan-back").onclick = () => { buildMap(); show("map"); };
+
+// 自動展卷：等速向左捲（＝閱讀方向），到卷尾自停；手動滾動或點畫即暫停
+const emakiAuto = { on: false, raf: 0, last: 0, pos: 0 };
+function emakiPlay(on) {
+  emakiAuto.on = on;
+  $("btn-emaki-play").textContent = on ? "⏸ 暫停" : "▶ 自動展卷";
+  cancelAnimationFrame(emakiAuto.raf);
+  if (!on) return;
+  const sc = $("emaki-scroll");
+  emakiAuto.last = 0;
+  emakiAuto.pos = sc.scrollLeft;
+  const step = t => {
+    if (!emakiAuto.on) return;
+    if (emakiAuto.last) {
+      emakiAuto.pos -= (t - emakiAuto.last) * 0.07;   // 70px/s
+      sc.scrollLeft = emakiAuto.pos;
+      if (Math.abs(sc.scrollLeft - emakiAuto.pos) > 2) return emakiPlay(false);  // 被夾住＝到卷尾
+    }
+    emakiAuto.last = t;
+    emakiAuto.raf = requestAnimationFrame(step);
+  };
+  emakiAuto.raf = requestAnimationFrame(step);
+}
+$("btn-emaki-play").onclick = () => emakiPlay(!emakiAuto.on);
+$("emaki-scroll").addEventListener("wheel", () => emakiPlay(false));
+$("emaki-scroll").addEventListener("touchstart", () => emakiPlay(false), { passive: true });
+// ponytail: 拖曳卷軸列不會觸發暫停（wheel/touch 已涵蓋主要操作）
+
+/* ---- nav ---- */
+$("btn-zukan").onclick = () => {
+  if ($("zukan").classList.contains("active")) { buildMap(); show("map"); }
+  else { buildZukan(); show("zukan"); }
+};
+$("btn-back").onclick = () => { buildMap(); show("map"); };
+$("btn-reset").onclick = () => {
+  if (confirm("清除進度、重新從日本橋啟程？")) {
+    localStorage.removeItem(KEY);
+    state = load();
+    buildZukan(); buildMap();
+  }
+};
+
+/* ---- 動畫版鳥瞰圖：偵測 game-assets/overworld.webm，存在則以影片取代靜態圖 ----
+   影片須與 overworld.jpg 同構圖同長寬比（固定鏡頭、僅環境動態），節點 % 座標即可共用 */
+fetch("game-assets/overworld.webm", { method: "HEAD" }).then(r => {
+  if (!r.ok) return;
+  const img = document.querySelector("#map-wrap img");
+  const v = document.createElement("video");
+  v.autoplay = v.muted = v.loop = true;
+  v.playsInline = true;
+  v.poster = "game-assets/overworld.jpg";
+  v.src = "game-assets/overworld.webm";
+  v.style.cssText = "width:100%;display:block";
+  img.replaceWith(v);
+}).catch(() => {});
+
+/* ---- BGM：Web Audio 原創 8-bit 和風道中曲（陽音階，零音檔）----
+   瀏覽器規定要有使用者手勢才能出聲：第一次點擊時啟動；♪ 鈕開關並記憶偏好 */
+const BGM_KEY = "tokaido-bgm";
+const bgm = { ctx: null, master: null, on: localStorage.getItem(BGM_KEY) !== "off", beat: 0, timer: 0 };
+const BPM = 92, BEAT = 60 / BPM, LOOP_BEATS = 32;
+// 旋律：陽音階（D），[MIDI, 拍長]，0 = 休止；8 小節步行調
+const LEAD = [
+  [62,.5],[64,.5],[67,.5],[69,.5],[71,1],[69,.5],[67,.5],   // 上路
+  [64,1.5],[62,.5],[64,2],
+  [67,.5],[69,.5],[71,.5],[74,.5],[76,1],[74,.5],[71,.5],   // 望遠
+  [69,2.5],[0,.5],[64,.5],[67,.5],
+  [69,.5],[71,.5],[74,1],[71,.5],[69,.5],[67,1],            // 折返
+  [64,.5],[67,.5],[69,1],[67,.5],[64,.5],[62,1],
+  [64,.5],[67,.5],[64,.5],[62,.5],[59,1],[62,1],            // 歸宿
+  [62,2.5],[0,1.5],
+];
+const BASS_ROOTS = [50, 52, 55, 57, 55, 52, 50, 50];   // 每小節根音（兩拍一擊）
+let _t = 0;
+const LEAD_EV = LEAD.map(([n, d]) => { const e = { n, at: _t, d }; _t += d; return e; });
+
+function bgmNote(freqMidi, at, dur, type, gain) {
+  const c = bgm.ctx;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type;
+  o.frequency.value = 440 * Math.pow(2, (freqMidi - 69) / 12);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(gain, at + 0.02);
+  g.gain.setValueAtTime(gain, at + dur * 0.7);
+  g.gain.linearRampToValueAtTime(0.0001, at + dur);
+  o.connect(g); g.connect(bgm.master);
+  o.start(at); o.stop(at + dur + 0.05);
+}
+function bgmTick() {
+  const c = bgm.ctx;
+  while (bgm.nextTime < c.currentTime + 0.4) {
+    const b = bgm.beat % LOOP_BEATS;
+    const t0 = bgm.nextTime;
+    LEAD_EV.forEach(e => { if (e.at === b && e.n) bgmNote(e.n, t0, e.d * BEAT * 0.92, "triangle", 0.10); });
+    if (b % 2 === 0) bgmNote(BASS_ROOTS[Math.floor(b / 4)], t0, BEAT * 1.6, "square", 0.028);
+    bgm.beat += 0.5;
+    bgm.nextTime += BEAT * 0.5;
+  }
+}
+function bgmChiptune() {   // 找不到 bgm.mp3 時的合成備援
+  if (bgm.ctx) return;
+  const c = new (window.AudioContext || window.webkitAudioContext)();
+  bgm.ctx = c;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400;
+  bgm.master = c.createGain(); bgm.master.gain.value = 0.5;
+  bgm.master.connect(lp); lp.connect(c.destination);
+  bgm.nextTime = c.currentTime + 0.1;
+  bgm.beat = 0;
+  bgm.timer = setInterval(bgmTick, 150);
+}
+// DOVA-SYNDROME 三曲輪播（下町屋台で食べ歩き／のんびり旅風情／江戸のぶらり旅）
+const BGM_LIST = [
+  "game-assets/bgm/01-shitamachi-yatai.mp3",
+  "game-assets/bgm/02-nonbiri-tabifuzei.mp3",
+  "game-assets/bgm/03-edo-burari.mp3",
+];
+// 頁面載入就先挑好隨機起始曲並預載——下載不需要使用者手勢，只有播放需要，
+// 首次點擊時歌曲已在緩衝，不用再等 mp3 下載
+bgm.track0 = Math.floor(Math.random() * BGM_LIST.length);
+bgm.warm = new Audio(BGM_LIST[bgm.track0]);
+bgm.warm.preload = "auto";
+function bgmPlay(i) {
+  bgm.track = ((i % BGM_LIST.length) + BGM_LIST.length) % BGM_LIST.length;
+  const a = (bgm.warm && bgm.track === bgm.track0) ? bgm.warm : new Audio(BGM_LIST[bgm.track]);
+  bgm.warm = null;   // 預載體只用一次
+  a.volume = 0.4;
+  a.onended = () => bgmPlay(bgm.track + 1);
+  const skip = () => { if (++bgm.fails >= BGM_LIST.length) bgmChiptune(); else bgmPlay(bgm.track + 1); };
+  a.onerror = skip;
+  a.play().then(() => { bgm.fails = 0; bgm.audio = a; }).catch(skip);
+}
+function bgmStart() {
+  if (bgm.started || !bgm.on) return;
+  bgm.started = true;
+  bgm.fails = 0;
+  bgmPlay(bgm.track0);   // 起點＝已預載的那首
+}
+function bgmSet(on) {
+  bgm.on = on;
+  localStorage.setItem(BGM_KEY, on ? "on" : "off");
+  $("btn-bgm").classList.toggle("off", !on);
+  if (on) {
+    bgmStart();
+    bgm.audio?.play();
+    bgm.ctx?.resume();
+    if (bgm.master) bgm.master.gain.value = 0.5;
+  } else {
+    bgm.audio?.pause();
+    if (bgm.master) bgm.master.gain.value = 0;
+  }
+}
+$("btn-bgm").classList.toggle("off", !bgm.on);
+$("btn-bgm").onclick = () => bgmSet(!bgm.on);
+document.addEventListener("pointerdown", () => bgmStart(), { once: true });
+
+buildMap();
+// 開場自動捲到江戶（地圖右下角）
+$("map-scroll").scrollLeft = 99999;
+window.scrollTo(0, document.body.scrollHeight);
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# 原始博物館掃描（2.1GB）——遊戲只需要 game-assets/，溯源見 assets/sources.json
+assets/*.jpg
+assets/*.jpeg
+assets/*.png
+assets/*.tif
+assets/*.tiff
+
+# 已停用的舊資產
+game-assets/overworld.webm.off
+
+# 開發過程的工作檔（實驗與驗證截圖，非遊戲本體）
+phase1/
+phase2-verify/
+dova-ai-results.md
+overworld-video-spec.md
+overworld-video-nodes.png
+
+# 工具與測試殘留
+.playwright-mcp/
+__pycache__/
+*.pyc
+.DS_Store
