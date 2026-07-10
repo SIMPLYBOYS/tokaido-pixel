@@ -157,6 +157,19 @@
     background: rgba(240,230,200,.6);
   }
   #scene-wrap { position: relative; display: inline-block; max-width: 96vw; }
+  /* 圖片載入指示：容器蓋 .loading 時顯示和紙底＋提示字，圖載妥淡入 */
+  #scene-wrap.loading::after, .hero.loading::after, #lightbox.loading::after {
+    content: "─ 畫作載入中 ─"; position: absolute; inset: 0;
+    display: grid; place-items: center; pointer-events: none;
+    background: var(--washi-dark); color: #716d5f;
+    font-size: 14px; letter-spacing: 3px;
+    animation: loadPulse 1.4s ease-in-out infinite;
+  }
+  #lightbox.loading::after { background: rgba(43,44,44,.96); color: var(--washi-dark); }
+  @keyframes loadPulse { 50% { opacity: .55; } }
+  .loading > img { opacity: 0; }
+  #scene-img, #card-img, #lightbox-img { transition: opacity .3s; }
+  #scene-wrap.loading { min-height: 40vh; }   /* 圖未載時撐住版面，避免整頁跳動 */
   #scene-img {
     width: 960px; max-width: 96vw; display: block;
     image-rendering: pixelated;
@@ -235,7 +248,7 @@
   }
   #card h2 { text-align: center; font-size: 22px; letter-spacing: 4px; }
   #card h2 small { font-size: 14px; color: var(--teal); margin-left: 8px; }
-  .hero { margin: 14px 0; }
+  .hero { margin: 14px 0; position: relative; min-height: 120px; }
   .hero img { width: 100%; display: block; border: 2px solid var(--ink); cursor: zoom-in; }
   .hero img.pixel { image-rendering: pixelated; }
   .hero figcaption { text-align: center; font-size: 12px; padding-top: 4px; color: var(--teal); }
@@ -707,13 +720,20 @@ function openScene(i) {
   updateHud();
   show("scene");
 }
+// 換圖統一走這裡：換 src 前蓋上載入指示，載妥（或快取命中）即除
+function loadInto(img, box, src) {
+  box.classList.add("loading");
+  img.onload = img.onerror = () => box.classList.remove("loading");
+  img.src = src;
+  if (img.complete && img.naturalWidth) box.classList.remove("loading");
+}
 // showReal=true 顯示廣重真跡，false 顯示像素版（兩者同裁切、座標共用）
 function setSceneImage(showReal) {
   const s = STATIONS[current];
   const img = $("scene-img");
-  img.src = showReal
+  loadInto(img, $("scene-wrap"), showReal
     ? `game-assets/originals/${s.slug}.jpg`
-    : `game-assets/scenes/${s.slug}.png`;
+    : `game-assets/scenes/${s.slug}.png`);
   img.classList.toggle("real", showReal);
   $("btn-flip").textContent = showReal ? "看像素版" : "看真跡";
 }
@@ -833,9 +853,9 @@ let cardIdx = -1, cardShowPixel = false, cardBrowse = false;
 function setCardImage() {
   const s = STATIONS[cardIdx];
   const img = $("card-img");
-  img.src = cardShowPixel
+  loadInto(img, img.closest(".hero"), cardShowPixel
     ? `game-assets/scenes/${s.slug}.png`
-    : `game-assets/originals/${s.slug}.jpg`;
+    : `game-assets/originals/${s.slug}.jpg`);
   img.classList.toggle("pixel", cardShowPixel);
   $("card-cap").textContent = cardShowPixel
     ? "像素道中（14 色浮世繪色盤）"
@@ -890,9 +910,9 @@ $("card-flip").onclick = () => { cardShowPixel = !cardShowPixel; setCardImage();
 $("card-img").onclick = () => {
   const s = STATIONS[cardIdx];
   const lbi = $("lightbox-img");
-  lbi.src = cardShowPixel
+  loadInto(lbi, $("lightbox"), cardShowPixel
     ? `game-assets/scenes/${s.slug}.png`
-    : `game-assets/large/${s.slug}.jpg`;
+    : `game-assets/large/${s.slug}.jpg`);
   lbi.style.imageRendering = cardShowPixel ? "pixelated" : "";
   $("lightbox").classList.remove("zoomed");
   $("lightbox").classList.add("active");
