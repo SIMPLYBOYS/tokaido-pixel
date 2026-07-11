@@ -1301,7 +1301,11 @@ function bgmPlay(i) {
   a.onended = () => bgmPlay(bgm.track + 1);
   const skip = () => { if (++bgm.fails >= BGM_LIST.length) bgmChiptune(); else bgmPlay(bgm.track + 1); };
   a.onerror = skip;
-  a.play().then(() => { bgm.fails = 0; bgm.audio = a; }).catch(skip);
+  a.play().then(() => { bgm.fails = 0; bgm.audio = a; }).catch(err => {
+    // 被自動播放政策擋下（如手勢效力不足）≠ 檔案壞了：不換曲，等下一次點擊重試
+    if (err && err.name === "NotAllowedError") { bgm.started = false; bgm.warm = a; return; }
+    skip();
+  });
 }
 function bgmStart() {
   if (bgm.started || !bgm.on) return;
@@ -1325,7 +1329,9 @@ function bgmSet(on) {
 }
 $("btn-bgm").classList.toggle("off", !bgm.on);
 $("btn-bgm").onclick = () => bgmSet(!bgm.on);
-document.addEventListener("pointerdown", () => bgmStart(), { once: true });
+// 觸控裝置上 pointerdown 不帶 user activation（瀏覽器還分不清點擊或捲動），
+// 要用 click 才播得動；bgmStart 內有 started 防重入，重複觸發無害
+document.addEventListener("click", () => bgmStart());
 
 buildMap();
 // 開場自動捲到江戶（地圖右下角）
