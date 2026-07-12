@@ -11,7 +11,10 @@
   "license": "No restrictions",
   "artist": "UBC Library Digitization Centre",
   "credit": "https://www.flickr.com/photos/ubclibrary_digicentre/14744637042/",
-  "description": "No known copyright restrictions. Please credit UBC Library as the image source. For more information, see digitalcollections.library.ubc.ca/cdm/about.\n\nAlternative Title: Tōkaidō meisho ichiran\n\nCreator: Katsushika, Hokusai, 1760-1849\n\nDate Issued: 1818\n\nSource: University of British Columbia Librar"
+  "description": "No known copyright restrictions. Please credit UBC Library as the image source. For more information, see digitalcollections.library.ubc.ca/cdm/about.\n\nAlternative Title: Tōkaidō meisho ichiran\n\nCreator: Katsushika, Hokusai, 1760-1849\n\nDate Issued: 1818\n\nSource: University of British Columbia Librar",
+  "note": "遊戲用 overworld.jpg 已改用 UBC Open Collections IIIF 原始掃描 4667×3512（iiif.library.ubc.ca/image/cdm.tokugawa.1-0216043.0000），經配準裁切(47,28,4585×3457)對齊本檔框架後縮至 2600px、色彩統計匹配舊圖",
+  "iiif": "https://iiif.library.ubc.ca/image/cdm.tokugawa.1-0216043.0000/info.json",
+  "item_page": "https://open.library.ubc.ca/collections/tokugawa/items/1.0216043"
  },
  {
   "file": "01-nihonbashi.jpg",
