@@ -241,7 +241,13 @@
   #card {
     background: var(--washi); max-width: 1150px; width: 100%;
     border: 3px solid var(--ink); border-radius: 4px; padding: 18px;
+    max-height: 92vh; overflow-y: auto;   /* 豆知識展開後小螢幕可捲動 */
   }
+  /* 宿場豆知識：原生 details 摺疊，預設收合 */
+  .facts { margin: 10px auto 4px; max-width: 640px; text-align: left; font-size: 13.5px; }
+  .facts summary { cursor: pointer; color: var(--teal); letter-spacing: 3px; user-select: none; }
+  .facts ul { margin: 8px 0 0; padding-left: 1.4em; }
+  .facts li { margin: 6px 0; line-height: 1.7; color: #55503f; }
   #card .stamp {
     text-align: center; color: var(--red); font-size: 15px; letter-spacing: 4px;
     margin-bottom: 8px;
@@ -355,6 +361,10 @@
       <figcaption id="card-cap"></figcaption>
     </figure>
     <p class="desc" id="card-desc"></p>
+    <details class="facts" id="card-facts">
+      <summary>宿場豆知識</summary>
+      <ul id="card-facts-list"></ul>
+    </details>
     <p class="credit" id="card-credit"></p>
     <div class="btn-row">
       <button id="card-prev-nav">‹ 前站</button>
@@ -400,26 +410,52 @@ const STATIONS = [
   { slug:"01-nihonbashi", ja:"日本橋", pic:"朝之景", map:[.955,.955],
     details:[[.55,.08,"行列先頭的毛槍"],[.30,.68,"魚河岸的挑夫"],[.83,.72,"木戶旁的白狗"]],
     desc:"東海道起點。晨光中大名行列正要過橋，橋下魚河岸的魚販挑著新鮮漁獲——江戶的一天從這裡開始。",
+    facts:[
+      "日本橋是五街道的起點，1604 年幕府定為全國里程的原點——「東海道五十三次」正是從這座橋起算。",
+      "橋畔的魚河岸是江戶最大的魚市場，直到 1923 年關東大地震後才遷往築地。",
+      "本圖為保永堂版全套的第一幅。當時徒步走完東海道全程約需兩週。",
+    ],
     credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
   { slug:"02-shinagawa", ja:"品川", pic:"日之出", map:[.885,.93],
     details:[[.10,.55,"灣內的千石船"],[.31,.62,"揚帆的漁舟"],[.55,.87,"街上的行列隊尾"]],
     desc:"江戶出城第一宿。海灣停滿貨船，行列隊伍沿著海岸茶屋前行，旭日初昇。",
+    facts:[
+      "品川是東海道第一宿，距日本橋僅二里（約 8 公里），江戶人送行多在此道別。",
+      "宿場臨江戶灣而建，天保年間旅籠近百軒，規模居東海道前列；灣內帆影是把物資運進江戶的廻船。",
+    ],
     credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
   { slug:"03-kawasaki", ja:"川崎", pic:"六郷渡舟", map:[.80,.925],
     details:[[.245,.75,"撐篙的船頭"],[.87,.42,"遠方的富士"],[.42,.66,"對岸的馬子與馬"]],
     desc:"六郷川上無橋，旅人全靠渡船過河。船頭一篙撐開水面，對岸村落炊煙裊裊，遠方富士靜立。",
+    facts:[
+      "六郷川（多摩川下游）原有大橋，1688 年被洪水沖毀後改行渡船，渡船收入成了川崎宿的重要財源。",
+      "此宿也因川崎大師（平間寺）的參詣客而繁榮，正月初詣的人潮至今仍是關東名場面。",
+      "晴日對岸可遙望富士——廣重把它安排在畫面遠方的雲霞之間。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"04-kanagawa", ja:"神奈川", pic:"台之景", map:[.72,.94],
     details:[[.17,.72,"沖上的帆船"],[.87,.48,"茶屋的掛招牌"],[.28,.87,"灣上的小渡舟"]],
     desc:"台地上茶屋一字排開，女中拉客聲不絕；坡下就是橫濱開港前的寧靜海灣，白帆點點。",
+    facts:[
+      "宿場建在俯瞰江戶灣的高台上，畫題「台之景」由此而來；沿坡茶屋的拉客女是東海道的名物風景。",
+      "這一帶就是今日的橫濱。1859 年開港後，小小的神奈川湊一躍成為日本面向世界的門戶。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"05-hodogaya", ja:"保土ヶ谷", pic:"新町橋", map:[.64,.925],
     details:[[.76,.72,"橋上的駕籠行列"],[.30,.28,"並木老樹"],[.445,.68,"店先的人影"]],
     desc:"新町橋畔茶屋林立，一隊大名行列正魚貫過橋——此地即今日橫濱市保土ヶ谷區。",
+    facts:[
+      "畫中旅人正踏過帷子川上的新町橋進宿；保土ヶ谷距日本橋八里，常是旅人第一天的落腳處。",
+      "出宿即上權太坂——自江戶出發以來第一道真正的險坡，舊時旅人聞之色變。",
+    ],
     credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
   { slug:"06-totsuka", ja:"戸塚", pic:"元町別道", map:[.565,.945],
     details:[[.245,.33,"「こめや」招牌"],[.35,.68,"下馬的旅人"],[.055,.75,"迎客的茶屋女"]],
     desc:"旅人翻身下馬，茶屋「こめや」招牌高掛。江戶清晨出發的旅人，多在戸塚歇第一夜。",
+    facts:[
+      "戸塚距江戶十里半，清晨出發的健腳旅人多在此歇第一夜——畫中翻身下馬的正是趕了一天路的人。",
+      "畫題「元町別道」指的是岔路：戸塚是往鎌倉、江之島參詣道的分歧點，路旁石標刻著「左り かまくら道」。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"07-fujisawa", ja:"藤沢", pic:"遊行寺", map:[.49,.93],
     details:[[.27,.55,"江之島一の鳥居"],[.66,.28,"山腰的遊行寺"],[.12,.75,"過橋的參拜客"]],
@@ -875,6 +911,11 @@ function openCard(i, justUnlocked) {
   $("card-title").innerHTML = `${s.ja}<small>${s.pic}</small>`;
   setCardImage();
   $("card-desc").textContent = s.desc;
+  // 宿場豆知識（facts 為選填欄位，逐批補內容）
+  const facts = s.facts || [];
+  $("card-facts").style.display = facts.length ? "" : "none";
+  $("card-facts").open = false;   // 每次開卡都收合
+  $("card-facts-list").innerHTML = facts.map(f => `<li>${f}</li>`).join("");
   $("card-credit").textContent = s.credit;
   // 終點京師：改為「完歩回顧」（圖鑑重開也能再看一次完歩式）
   const last = i === STATIONS.length - 1;
