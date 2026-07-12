@@ -243,7 +243,7 @@
     border: 3px solid var(--ink); border-radius: 4px; padding: 18px;
     max-height: 92vh; overflow-y: auto;   /* 豆知識展開後小螢幕可捲動 */
   }
-  /* 宿場豆知識：原生 details 摺疊，預設收合；summary 做成朱印風按鈕條 */
+  /* 道中見聞（宿場知識點）：原生 details 摺疊，預設收合；summary 做成朱印風按鈕條 */
   .facts { margin: 12px auto 4px; max-width: 640px; text-align: left; font-size: 13.5px; }
   .facts summary {
     cursor: pointer; user-select: none; list-style: none;
@@ -252,8 +252,8 @@
     background: rgba(212,197,164,.55); color: var(--ink); letter-spacing: 3px;
   }
   .facts summary::-webkit-details-marker { display: none; }
-  .facts summary::before {   /* 朱印「豆」 */
-    content: "豆"; flex: none; letter-spacing: 0;
+  .facts summary::before {   /* 朱印「見」 */
+    content: "見"; flex: none; letter-spacing: 0;
     background: var(--red); color: var(--washi);
     font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: 2px;
   }
@@ -356,7 +356,7 @@
   <div class="btn-row">
     <button id="btn-back">← 回地圖</button>
     <button id="btn-flip" style="display:none">看像素版</button>
-    <button id="btn-facts" style="display:none">宿場豆知識</button>
+    <button id="btn-facts" style="display:none">道中見聞</button>
   </div>
 </div>
 
@@ -382,7 +382,7 @@
     </figure>
     <p class="desc" id="card-desc"></p>
     <details class="facts" id="card-facts">
-      <summary>宿場豆知識<span id="facts-new">新</span></summary>
+      <summary>道中見聞<span id="facts-new">新</span></summary>
       <ul id="card-facts-list"></ul>
     </details>
     <p class="credit" id="card-credit"></p>
@@ -480,198 +480,398 @@ const STATIONS = [
   { slug:"07-fujisawa", ja:"藤沢", pic:"遊行寺", map:[.49,.93],
     details:[[.27,.55,"江之島一の鳥居"],[.66,.28,"山腰的遊行寺"],[.12,.75,"過橋的參拜客"]],
     desc:"時宗總本山遊行寺山門在望，橋前矗立江之島參道的一の鳥居，香客絡繹於途。",
+    facts:[
+      "藤澤宿在時宗總本山遊行寺的門前發展；畫中大鳥居是江之島弁財天的一之鳥居，參詣道由此分岔。",
+      "畫中結伴過鳥居的是前往江之島的座頭（按摩、音曲等盲人職業）——江島弁財天被信為庇佑技藝之神。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"08-hiratsuka", ja:"平塚", pic:"縄手道", map:[.42,.95],
     details:[[.38,.30,"渾圓的高麗山"],[.58,.42,"富士雪頂"],[.54,.78,"疾走的飛腳"]],
     desc:"之字形的田間道上，飛腳與駕籠擦身而過；圓錐狀的高麗山盤踞正面，富士雪頂在其後微露。",
+    facts:[
+      "畫中渾圓的高麗山實際存在，傳說因古代高句麗渡來人定居而得名。",
+      "飛腳與空駕籠在縄手道（田間道）上交錯，之字形的道路是廣重營造縱深的名構圖。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"09-oiso", ja:"大磯", pic:"虎ヶ雨", map:[.35,.93],
     details:[[.275,.66,"雨中疾行的旅人"],[.475,.79,"路旁的藁塚"],[.86,.78,"蓑笠的馬上旅人"]],
     desc:"初夏細雨斜織。「虎ヶ雨」典出曾我兄弟仇討——傳說此雨是虎御前之淚。雨中旅人低頭疾行入宿。",
+    facts:[
+      "畫題「虎ヶ雨」出自曾我兄弟復仇記：兄長十郎戰死，愛人虎御前之淚化作舊曆五月二十八日（忌日）的雨。",
+      "虎御前是大磯遊女，大磯自古便是《曾我物語》悲戀的舞台。",
+    ],
     credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
   { slug:"10-odawara", ja:"小田原", pic:"酒匂川", map:[.27,.955],
     details:[[.36,.75,"肩扛駕籠的川越人足"],[.63,.66,"對岸的行列"],[.68,.22,"箱根連山"]],
     desc:"酒匂川不架橋，全憑川越人足肩扛徒涉。背後箱根連山層疊蒼茫，小田原城隱約可見。",
+    facts:[
+      "酒匂川原則上不架橋，旅人靠川越人足肩扛或乘輦台渡河。",
+      "遠景可見小田原城與箱根連山；小田原是進箱根前最後的城下町，名物有梅干與外郎（ういろう）。",
+    ],
     credit:"掃描：Cooper Hewitt, Smithsonian Design Museum（public domain）· via Wikimedia Commons" },
   { slug:"11-hakone", ja:"箱根", pic:"湖水図", map:[.19,.92],
     details:[[.13,.75,"蘆之湖"],[.67,.83,"山腹的行列"],[.21,.47,"遠望的富士"]],
     desc:"全系列最險峻的一幅。嶙峋山塊拔地而起，蘆之湖靜臥其下，大名行列在山腹小徑上蜿蜒成一線。",
+    facts:[
+      "箱根宿位居東海道全線最高處（標高約 725 公尺），「箱根八里」號稱天下之險。",
+      "畫中湖為蘆之湖，山體用大膽的色塊拼貼描繪，是保永堂版中最前衛的構圖之一。",
+      "關所諺語「入鉄砲に出女」——箱根關所實際專司查驗「出女」，防大名妻眷潛離江戶。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"12-mishima", ja:"三島", pic:"朝霧", map:[.036,.395],
     details:[[.63,.42,"霧中的鳥居"],[.30,.42,"馬上的旅人"],[.09,.50,"霧中遠去的人影"]],
     desc:"晨霧未散，三嶋大社的鳥居只剩青灰剪影。旅人跨馬出發，駕籠擔夫縮著肩前行——翻越箱根峠後的第一宿。",
+    facts:[
+      "三島宿由伊豆國一宮三嶋大社的門前町發展而來，畫中霧裡的鳥居正是大社。",
+      "全圖以濃淡剪影表現晨霧，霧中人影僅用灰色版摺出，是保永堂版氛圍表現的名作。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"13-numazu", ja:"沼津", pic:"黄昏図", map:[.160,.330],
     details:[[.52,.36,"初昇的滿月"],[.50,.79,"背著天狗面的參拜者"],[.315,.60,"通往村落的小橋"]],
     desc:"滿月初昇，黃昏的狩野川畔。背著天狗面具的金毘羅參拜者與旅人默默趕往宿場——全系列唯一的月夜場景。",
+    facts:[
+      "本圖是保永堂版全套中唯一的月夜圖。",
+      "背著大天狗面的旅人是前往讚岐金毘羅的參拜者，面具是奉納金毘羅大權現之物。",
+    ],
     credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
   { slug:"14-hara", ja:"原", pic:"朝之富士", map:[.049,.303],
     details:[[.60,.07,"突破畫框的山頂"],[.63,.58,"田中的白鶴"],[.27,.62,"仰望的藍衣旅婦"]],
     desc:"富士山頂突破畫框——廣重全系列最大膽的構圖。晨光中雪嶺高聳，田間白鶴悠然踱步，旅婦仰首而望。",
+    facts:[
+      "原宿以東海道屈指的富士眺望著稱；本圖讓富士山頂突破畫框上緣，是保永堂版最著名的構圖突破。",
+      "富士前方的深色山稜是愛鷹山。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"15-yoshiwara", ja:"吉原", pic:"左富士", map:[.127,.206],
     details:[[.28,.28,"左側的富士"],[.64,.63,"馬背上打盹的孩子"],[.55,.77,"松並木旁的立牌"]],
     desc:"松並木夾道，馬背上的孩童昏昏欲睡。東海道一路富士皆在右手，唯獨吉原這段彎道富士現於左——「左富士」名所。",
+    facts:[
+      "吉原宿曾兩度毀於高潮而內遷，道路因此屈曲，才造就「左富士」奇景。",
+      "東海道上富士大體在右手邊，左富士全線僅此地與茅崎南湖兩處，吉原尤負盛名。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"16-kanbara", ja:"蒲原", pic:"夜之雪", map:[.098,.096],
     details:[[.38,.71,"撐傘的夜行人"],[.69,.69,"蓑衣拄杖的旅人"],[.55,.45,"雪深的茅屋頂"]],
     desc:"全系列最負盛名的雪景。夜幕無星，厚雪覆村，三個旅人縮著身子各自趕路——現實的蒲原其實少雪，這是廣重的詩意虛構。",
+    facts:[
+      "與庄野〈白雨〉並稱保永堂版雙璧。",
+      "實際的蒲原氣候溫暖罕見大雪，此雪景被認為出自廣重的想像創作。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"17-yui", ja:"由比", pic:"薩埵嶺", map:[.171,.100],
     details:[[.13,.20,"崖上眺望的旅人"],[.38,.44,"灣對岸的富士"],[.84,.56,"海上的帆影"]],
     desc:"薩埵峠的斷崖險道。旅人扶樹俯瞰腳下的駿河灣，白帆點點，富士雪嶺隔灣靜立——全系列視野最壯闊的一幅。",
+    facts:[
+      "薩埵峠是東海道著名險所，由此俯瞰駿河灣與富士的構圖至今仍是攝影名所。",
+      "今日的東名高速、國道 1 號、東海道本線都擠在薩埵峠下的狹窄海岸——古今交通要衝如一。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"18-okitsu", ja:"興津", pic:"興津川", map:[.359,.186],
     details:[[.61,.57,"騎馬渡川的力士"],[.47,.80,"抬駕籠的人足"],[.24,.33,"臨水的岩崖老松"]],
     desc:"興津川淺灘。兩位相撲力士一騎馬一乘駕籠渡川——馬被壓得低頭，人足咬牙硬撐，全系列難得的幽默場面。",
+    facts:[
+      "畫中兩位相撲力士一騎馬一乘駕籠渡興津川，是保永堂版少見的幽默小品。",
+      "興津的清見寺曾接待朝鮮通信使與琉球使節；德川家康幼年為人質時曾在此讀書。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"19-ejiri", ja:"江尻", pic:"三保遠望", map:[.277,.210],
     details:[[.30,.83,"港內林立的桅杆"],[.62,.55,"三保松原的沙嘴"],[.78,.45,"遠海的白帆"]],
     desc:"從江尻高處遠望三保松原。港內桅杆如林，外海白帆點點，傳說天女羽衣的松原沙嘴橫臥灣中。",
+    facts:[
+      "江尻是清水湊所在，駿河灣的物資集散港。",
+      "對岸沙嘴是羽衣傳說之地三保松原，2013 年作為富士山構成資產列入世界遺產。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"20-fuchu", ja:"府中", pic:"安倍川", map:[.246,.306],
     details:[[.585,.74,"輦台上的駕籠"],[.15,.55,"馱貨渡川的馬"],[.40,.50,"涉水的川越人足"]],
     desc:"安倍川禁架橋樑，全靠川越人足。輦台上的駕籠客、人足肩上的旅人、馱貨的馬——各種渡川方式一景全收。",
+    facts:[
+      "府中即駿府（今靜岡市中心），德川家康晚年隱居的大御所之城，規模居東海道前列。",
+      "安倍川畔的名物「安倍川餅」是裹黃豆粉的麻糬，相傳名稱出自家康。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"21-mariko", ja:"鞠子", pic:"名物茶店", map:[.346,.357],
     details:[[.53,.76,"吃とろろ汁的旅人"],[.64,.74,"背子的茶店女"],[.42,.35,"早春的白梅"]],
     desc:"丸子宿名物とろろ汁。茅簷茶屋前旅人埋頭喝湯，店婦背著孩子招呼，早春白梅初綻——芭蕉也詠過這碗湯。",
+    facts:[
+      "丸子是東海道規模最小的宿場；名物とろろ汁老舖「丁子屋」創業於 1596 年，至今仍在原地營業。",
+      "松尾芭蕉句「梅若菜丸子の宿のとろろ汁」詠的正是此地。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"22-okabe", ja:"岡部", pic:"宇津之山", map:[.409,.473],
     details:[[.53,.63,"峽谷間的激流"],[.43,.85,"負薪的樵夫"],[.37,.53,"窄道上的旅人"]],
     desc:"宇津ノ谷峠。兩壁青山夾出一線窄道，激流沿路奔下，樵夫負薪歸來——伊勢物語「蔦の細道」的故地。",
+    facts:[
+      "宇津ノ谷峠自《伊勢物語》「東下り」以來就是歌枕之地，古道「蔦の細道」聞名。",
+      "畫中把兩側山勢誇張地壓向行人，是廣重刻意的構圖變形。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"23-fujieda", ja:"藤枝", pic:"人馬継立", map:[.450,.552],
     details:[[.30,.62,"問屋場前的馱馬"],[.68,.35,"戴笠的宿役人"],[.94,.55,"堆疊的貨箱"]],
     desc:"藤枝問屋場的人馬交接。挑夫卸貨、馬子換馬、宿役人清點——東海道驛傳制度運作的第一手紀錄。",
+    facts:[
+      "本圖描繪問屋場交接人馬的實務——宿場制度的核心：人足與馬按貨載計價、逐宿接力。",
+      "藤枝同時是田中藩的城下町。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"24-shimada", ja:"島田", pic:"大井川駿岸", map:[.520,.626],
     details:[[.28,.44,"河原集結的行列"],[.35,.10,"大井川本流"],[.58,.75,"河原上的孤松"]],
     desc:"「越すに越されぬ大井川」——無橋無渡船，大名行列在駿河岸的河原上集結，等川越人足肩扛徒涉。",
+    facts:[
+      "俗謠唱「箱根八里は馬でも越すが、越すに越されぬ大井川」——大井川禁舟禁橋，全靠川越人足肩渡。",
+      "增水「川留」動輒數日，滯留的旅人反而讓島田宿熱鬧如江戶。",
+    ],
     credit:"掃描：Museum of Fine Arts Boston（public domain）· via Wikimedia Commons" },
   { slug:"25-kanaya", ja:"金谷", pic:"大井川遠岸", map:[.544,.701],
     details:[[.60,.60,"渡川的人足行列"],[.18,.85,"輦台上的駕籠"],[.68,.30,"山腹的金谷坂道"]],
     desc:"金谷側遠岸。行列正涉過大井川主流，對岸山腹的坂道通往金谷宿——過了這條川，駿河便在身後。",
+    facts:[
+      "金谷與島田隔大井川相望，本圖與島田圖是同一渡河場面的兩岸對望。",
+      "川越人足按水深計價，肩車、輦台各有定價；水深超過四尺五寸（約及腋）即宣布川留。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"26-nissaka", ja:"日坂", pic:"佐夜ノ中山", map:[.655,.736],
     details:[[.49,.83,"路中的夜泣石"],[.58,.77,"圍觀怪石的旅人"],[.80,.50,"陡坂上攀行的旅人"]],
     desc:"小夜の中山峠。路中央躺著「夜泣石」——傳說被斬孕婦的冤魂夜夜自石中啼哭，旅人紛紛駐足；兩側坂道陡得誇張。",
+    facts:[
+      "小夜中山是東海道三大難所之一；路中圓石是「夜泣石」：傳說被害孕婦之魂附石夜泣。",
+      "與傳說相連的名物「子育飴」至今仍在販售。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"27-kakegawa", ja:"掛川", pic:"秋葉山遠望", map:[.761,.731],
     details:[[.655,.255,"斷線飛走的風箏"],[.33,.62,"橋上頂風的旅人"],[.83,.18,"遠方的秋葉山"]],
     desc:"塩井川原的大池橋。旅人頂著遠州名物的強風過橋，一只斷線風箏翻飛遠去，防火之神秋葉山在霞中聳立。",
+    facts:[
+      "秋葉山是火防信仰的總本宮，全國秋葉神社之源；大池橋畔即秋葉街道入口，畫面前景立著秋葉權現的常夜燈。",
+      "天上斷線飛走的風箏突破畫框——遠州是風箏名地，凧揚げ盛行。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"28-fukuroi", ja:"袋井", pic:"出茶屋ノ図", map:[.702,.659],
     details:[[.29,.68,"煮茶的茶屋老婦"],[.40,.66,"歇肩抽菸的挑夫"],[.85,.36,"高札上的燕子"]],
     desc:"路邊簡陋的出茶屋。老婦蹲著煽火煮茶，挑夫放下擔子借火抽菸——全系列最小的宿場，卻是最悠閒的一幅。",
+    facts:[
+      "袋井是五十三宿的正中央第 27 宿，從江戶數或從京都數都是第 27，自稱「東海道どまん中」。",
+      "全圖只畫路旁一間葦簀搭的出茶屋，是全套中出名的極簡構圖。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"29-mitsuke", ja:"見附", pic:"天龍川図", map:[.629,.623],
     details:[[.47,.62,"持篙的船夫"],[.56,.72,"舟中的紫衣客"],[.35,.42,"霧中對岸的人馬"]],
     desc:"天龍川渡舟。沙洲間霧氣迷濛，船夫持篙待發，對岸渡口人馬只剩淡墨剪影——全系列最寂靜的水景。",
+    facts:[
+      "見附是古代遠江國府所在地；「見附」之名一說源自自京都東來初次「見付」富士。",
+      "天龍川水深流急，以船渡通行。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"30-hamamatsu", ja:"濱松", pic:"冬枯ノ図", map:[.562,.530],
     details:[[.36,.70,"焚火取暖的農人"],[.52,.28,"參天的巨松"],[.63,.62,"駐足的旅人"]],
     desc:"冬枯的原野。巨松下農人焚火取暖，白煙裊裊升入灰空，遠處濱松城郭隱約可見——蕭瑟入骨的冬景。",
+    facts:[
+      "濱松城是家康 29 到 45 歲十七年間的居城，歷代城主多高昇幕府要職，後世稱「出世城」。",
+      "濱松是東海道屈指的大宿場，本陣多達六軒，與箱根並列全線之最。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"31-maisaka", ja:"舞坂", pic:"今切真景", map:[.539,.478],
     details:[[.52,.60,"湖上的漁舟"],[.865,.40,"遠望最後的富士"],[.13,.80,"近岸的杭列"]],
     desc:"濱名湖今切渡口。漁舟點點掠過湖面，畫面右緣富士雪頂最後一次現身——過了舞坂，東海道就再看不見富士了。",
+    facts:[
+      "濱名湖原為淡水湖，1498 年明應地震使湖口決開通海，決口處名「今切」；舞坂—新居間因此改行船渡。",
+      "舞坂宿今存脇本陣建築，是舊東海道唯一現存的脇本陣遺構。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"32-arai", ja:"荒井", pic:"渡舟ノ図", map:[.635,.475],
     details:[[.21,.64,"伸懶腰的船夫"],[.52,.18,"御座船的毛槍羽飾"],[.82,.47,"對岸的新居關所"]],
     desc:"今切渡海上一里半。大名的御座船緩緩橫渡濱名湖，前船船夫伸腰打呵欠——對岸就是東海道盤查最嚴的新居關所。",
+    facts:[
+      "新居關所與箱根並列東海道兩大關所，武器查驗特嚴；現存建物是全國唯一留存的關所建築。",
+      "渡船直接駛入關所前的船着場，旅人下船即受盤查。",
+    ],
     credit:"掃描：public domain · via Wikimedia Commons" },
   { slug:"33-shirasuka", ja:"白須賀", pic:"汐見阪図", map:[.707,.477],
     details:[[.70,.72,"汐見坂的大名行列"],[.30,.63,"遠州灘的白帆"],[.62,.25,"坂上的黑松"]],
     desc:"汐見坂上俯瞰遠州灘。大名行列沿坡道蜿蜒而下，眼底松原白浪、帆影點點——「望汐之坂」名符其實。",
+    facts:[
+      "汐見坂上可眺遠州灘，自京都方向而來是初見太平洋之處。",
+      "白須賀宿原在坂下海濱，1707 年寶永地震海嘯後整宿遷往坂上台地。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"34-futagawa", ja:"二川", pic:"猿ヶ馬場", map:[.774,.472],
     details:[[.47,.74,"賣藝的瞽女三人組"],[.13,.60,"名物柏餅茶屋"],[.60,.28,"荒原上的矮松"]],
     desc:"猿馬場的荒涼原野，矮松點點。三位彈三味線的瞽女結伴趕路，路旁茶屋掛著名物柏餅的招牌。",
+    facts:[
+      "畫中茶屋賣的名物是柏餅；東海道 111 處本陣今僅存二川與草津兩處，二川宿本陣開放參觀。",
+      "行走荒原的三人是瞽女——結伴賣藝的盲眼女樂師，此圖被稱為全套中最寂寥的一景。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"35-yoshida", ja:"吉田", pic:"豐川橋", map:[.841,.506],
     details:[[.85,.32,"天守鷹架上的工匠"],[.15,.67,"豐川橋上的旅人"],[.28,.76,"川面的小舟"]],
     desc:"豐川橋畔，吉田城天守正在修繕——鷹架上的工匠停下手邊活，悠然遠眺。橋、城、川舟一景三收。",
+    facts:[
+      "吉田即今豐橋；吉田大橋是幕府直營的「天下橋」，東海道上這樣的大橋屈指可數。",
+      "畫中鷹架上的工匠正在修繕吉田城——把工事中的城入畫，構思相當別緻。",
+    ],
     credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
   { slug:"36-goyu", ja:"御油", pic:"旅人留女", map:[.912,.540],
     details:[[.42,.60,"強拉客人的留女"],[.63,.60,"持杖圍觀的宿場女"],[.85,.56,"旅籠內的食客"]],
     desc:"暮色中的宿場街，留女死命把旅人往自家旅籠裡拖——招攬過了頭的「拉客大戰」，全系列最幽默的一幅。",
+    facts:[
+      "御油到赤坂僅十六町（約 1.7 公里），是東海道相鄰宿場中距離最短的一對。",
+      "畫中「留女」強拉旅人投宿，《東海道中膝栗毛》也寫過；簷下招牌藏著版元、雕師、摺師與「一立齋圖」——整個製作團隊都被畫了進去。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"37-akasaka", ja:"赤坂", pic:"旅舎招婦ノ図", map:[.963,.484],
     details:[[.585,.52,"中庭的蘇鉄"],[.17,.55,"洗足的旅人"],[.83,.62,"對鏡梳妝的招婦"]],
     desc:"旅籠之夜。中庭蘇鉄婆娑，左邊旅人洗腳歇息，右邊飯盛女對鏡梳妝——同一屋簷下的兩個世界，與御油成對之作。",
+    facts:[
+      "與御油同以飯盛女聞名；畫面以中庭一株蘇鉄同時展演旅籠內外的群像。",
+      "畫中旅籠即「大橋屋」，創業於 1649 年、營業至 2015 年，是東海道最後歇業的旅籠。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"38-fujikawa", ja:"藤川", pic:"棒鼻ノ図", map:[.912,.452],
     details:[[.43,.40,"宿界的棒鼻標柱"],[.28,.72,"跪迎行列的村人"],[.11,.80,"路旁的小狗"]],
     desc:"宿場入口的棒鼻界標前，村人跪迎將軍獻馬的八朔御馬行列——連路旁的小狗也湊著看熱鬧。",
+    facts:[
+      "「棒鼻」是宿場出入口的界標；畫中隊伍是「八朔御馬獻上」——幕府每年八月一日向朝廷獻馬的行列。",
+      "一說廣重 1832 年正是隨此行列上京，沿途寫生成為保永堂版的底稿。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"39-okazaki", ja:"岡崎", pic:"矢矧之橋", map:[.860,.417],
     details:[[.30,.63,"矢矧橋上的行列"],[.78,.47,"岡崎城天守"],[.66,.30,"藍靛遠山"]],
     desc:"東海道第一長橋矢矧橋，大名行列魚貫而過，岡崎城天守聳立松間——德川家康誕生之城。",
+    facts:[
+      "矢矧橋（矢作橋）約 208 間，是江戶時代日本最長的大橋。",
+      "岡崎是德川家康出生的岡崎城城下町。",
+      "傳說幼年秀吉與蜂須賀小六在橋上相遇——實為後世創作（戰國時此處無橋），江戶庶民卻深信不疑。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"40-chiryu", ja:"池鯉鮒", pic:"首夏馬市", map:[.782,.401],
     details:[[.52,.18,"馬市的大松"],[.20,.63,"放牧的馬群"],[.62,.72,"樹蔭下議價的馬販"]],
     desc:"初夏馬市。原野上馬群繫於繩柵之間，馬販聚在樹蔭下議價——池鯉鮒宿每年首夏的盛事。",
+    facts:[
+      "池鯉鮒（今知立）每年初夏舉行馬市，畫題「首夏馬市」即此；宿名相傳源自知立神社御手洗池中的鯉與鮒。",
+      "附近的八橋是《伊勢物語》燕子花故事的歌枕之地。",
+    ],
     credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
   { slug:"41-narumi", ja:"鳴海", pic:"名物有松絞", map:[.722,.362],
     details:[[.25,.55,"藍暖簾的絞染店"],[.68,.56,"騎馬的旅人"],[.48,.76,"歇下的駕籠"]],
     desc:"鳴海宿的絞染店街。藍暖簾白字寫著「有松絞」，騎馬與乘駕籠的旅人沿街選購名物——江戶人最愛的伴手禮。",
+    facts:[
+      "名物有松絞染至今仍是名古屋代表工藝；畫中街道兩側正是販售絞染的店家。",
+      "有松其實是鳴海宿旁的「間之村」——廣重把鄰村的名物街景畫成了鳴海的代表。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"42-miya", ja:"宮", pic:"熱田神事", map:[.794,.339],
     details:[[.35,.55,"拉曳神馬的壯漢"],[.84,.45,"熱田神宮大鳥居"],[.60,.30,"競奔的第二隊"]],
     desc:"熱田神宮的馬追神事。兩隊壯漢拉著神馬狂奔競速，大鳥居下塵土飛揚——尾張最熱血的祭典之夜。",
+    facts:[
+      "宮宿是熱田神宮門前町，東海道規模最大的宿場，旅籠多達 248 軒。",
+      "宮到桑名之間是「七里渡」海路，東海道唯一的海上區間。",
+      "畫中兩隊壯漢伴馬競逐奔馳，描繪的是熱田「馬の塔」獻馬神事。",
+    ],
     credit:"掃描：Rijksmuseum（CC0）· via Wikimedia Commons" },
   { slug:"43-kuwana", ja:"桑名", pic:"七里渡口", map:[.871,.300],
     details:[[.47,.62,"收帆入港的渡船"],[.68,.42,"桑名城的石垣"],[.13,.42,"外海的歸帆"]],
     desc:"宮到桑名無陸路，全靠「七里渡」海路。渡船收帆入港，桑名城石垣聳立岸邊——伊勢路的門戶。",
+    facts:[
+      "七里渡的桑名側渡口立著伊勢神宮遙拜的「一之鳥居」，宣告進入伊勢國。",
+      "江戶俗語「その手は桑名の焼き蛤」以桑名諧音雙關，名物燒蛤無人不知。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"44-yokkaichi", ja:"四日市", pic:"三重川", map:[.940,.291],
     details:[[.17,.84,"被風吹跑的斗笠"],[.31,.70,"追帽的旅人"],[.52,.28,"狂風中的大柳樹"]],
     desc:"三重川畔狂風大作。旅人追著被吹跑的斗笠狼狽奔跑，大柳樹被吹得東倒西歪——全系列最有動感的一幅。",
+    facts:[
+      "四日市得名於每月逢「四」之日（四日、十四日、二十四日）開市的定期市。",
+      "宿場南方的「日永追分」是東海道與伊勢參宮道的分岔口，伊勢參拜人潮的要衝。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"45-ishiyakushi", ja:"石藥師", pic:"石藥師寺", map:[.972,.232],
     details:[[.22,.56,"石藥師寺的山門"],[.55,.25,"暮色的青山"],[.72,.71,"田里的稻束"]],
     desc:"暮色下的石藥師寺山門靜立林間，田裡稻束成排、青山如黛——收割時節的伊勢田園風景。",
+    facts:[
+      "宿名取自寺內刻於巨石、俗稱「石藥師」的藥師如來，相傳為弘法大師所刻；寺後來反依宿名改稱石藥師寺。",
+      "此地也是明治歌人、《夏は来ぬ》作詞者佐佐木信綱的故鄉。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"46-shono", ja:"庄野", pic:"白雨", map:[.911,.190],
     details:[[.33,.62,"冒雨抬轎的人足"],[.63,.76,"撐傘疾奔的旅人"],[.60,.32,"風雨中的竹林"]],
     desc:"「白雨」即驟雨。抬轎的往坡上逃、撐傘的往坡下奔，竹林在風雨中翻倒——廣重公認的最高傑作。",
+    facts:[
+      "「白雨」即夏日驟雨；本圖與蒲原〈夜之雪〉並稱保永堂版雙璧。",
+      "畫中坡道找不到對應實景——廣重刻意選了一段無名坡道，以斜雨與竹林剪影營造戲劇張力。",
+    ],
     credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
   { slug:"47-kameyama", ja:"龜山", pic:"雪晴", map:[.850,.176],
     details:[[.62,.54,"雪坡上攀行的行列"],[.78,.12,"崖頂的龜山城"],[.52,.33,"雪覆的松林"]],
     desc:"雪後初晴。大名行列沿陡坡攀向崖頂的龜山城，朝陽把雪坡染成粉紅——全系列最凜冽的構圖之一。",
+    facts:[
+      "龜山是伊勢龜山藩的城下町；雪坡上的大名行列正攀向龜山城京口門。",
+      "一般認為構圖大幅誇張了坡道的高差；雪白與晴空藍的對比是本圖精華。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"48-seki", ja:"関", pic:"本陣早立", map:[.775,.182],
     details:[[.13,.42,"梅鉢紋的幔幕"],[.45,.52,"整裝的隨從"],[.29,.79,"曉暗中的燈籠"]],
     desc:"天未亮的関宿本陣。梅鉢紋幔幕下隨從整裝、燈籠未熄——大名一行摸黑出發的清晨即景。",
+    facts:[
+      "關宿得名於古代日本三關之一的「鈴鹿關」。",
+      "今日關宿保存完整江戶街景，是東海道宿場中唯一的重要傳統的建造物群保存地區。",
+      "畫的是本陣清晨出立；門前本應寫大名名號的關札，被廣重戲筆寫成化妝品「仙女香」的廣告。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"49-sakanoshita", ja:"坂之下", pic:"筆捨嶺", map:[.701,.178],
     details:[[.25,.55,"筆捨嶺的飛瀑"],[.70,.52,"茶屋前眺望的旅人"],[.60,.78,"馱薪的黑牛"]],
     desc:"傳說狩野元信面對此嶺自嘆畫不出、擲筆而去——「筆捨嶺」。茶屋歇腳的旅人隔谷眺望飛瀑奇峰。",
+    facts:[
+      "「筆捨嶺」得名傳說：室町繪師狩野元信寫生此山，因山容變化萬千無法捕捉而擲筆。",
+      "坂之下是翻越鈴鹿峠前的宿場——「東箱根、西鈴鹿」，東海道兩大險所之一。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"50-tsuchiyama", ja:"土山", pic:"春之雨", map:[.588,.194],
     details:[[.35,.82,"春雨中過橋的行列"],[.28,.28,"雨中的杉木立"],[.74,.60,"奔騰的山溪"]],
     desc:"春雨綿綿的鈴鹿山麓。大名行列低頭撐傘過橋，溪水暴漲奔騰——「坂は照る照る鈴鹿は曇る、あいの土山雨が降る」。",
+    facts:[
+      "鈴鹿馬子唄唱「坂は照る照る鈴鹿は曇る、あいの土山雨が降る」——土山多雨，畫題正是春雨。",
+      "行列冒雨走過的是田村川橋；橋畔田村神社祭祀傳說中平定鈴鹿峠惡鬼的坂上田村麻呂。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"51-minakuchi", ja:"水口", pic:"名物干瓢", map:[.530,.162],
     details:[[.20,.62,"削瓢的農家女"],[.40,.55,"竿上晾曬的干瓢"],[.57,.52,"路過的旅人"]],
     desc:"水口名物干瓢（葫蘆乾）。農家女削瓢成條、掛竿晾曬，旅人好奇駐足——近江街道的日常風景。",
+    facts:[
+      "名物干瓢：畫中農家女正削瓠瓜晾曬，水口至今仍產干瓢。",
+      "水口同時是水口藩的城下町。",
+    ],
     credit:"掃描：Library of Congress（public domain）· via Wikimedia Commons" },
   { slug:"52-ishibe", ja:"石部", pic:"目川ノ里", map:[.473,.118],
     details:[[.35,.58,"目川的田樂茶屋"],[.28,.85,"嬉鬧趕路的旅人"],[.45,.30,"遠望的三上山"]],
     desc:"目川立場的田樂茶屋前，旅人成群嬉鬧趕路——離京都只剩兩日路程，連腳步都輕快了起來。",
+    facts:[
+      "俗語「京立ち石部泊まり」——清晨從京都出發的旅人，第一夜多宿石部。",
+      "畫中「目川の里」茶屋名物是田樂豆腐配菜飯；目川其實鄰近草津，廣重又一次把鄰地名物借來入畫。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"53-kusatsu", ja:"草津", pic:"名物立場", map:[.532,.089],
     details:[[.55,.72,"飛奔的早駕籠"],[.40,.28,"姥ヶ餅茶屋的食客"],[.13,.38,"簷下卸擔的挑夫"]],
     desc:"草津名物姥ヶ餅屋前，「早駕籠」呼嘯而過——東海道與中山道在此交會，人聲鼎沸的交通樞紐。",
+    facts:[
+      "草津是東海道與中山道分合的交通樞紐。",
+      "畫中茶屋賣的名物「うばがもち」（姥餅）至今仍在草津販售；門前飛奔而過的是急行的早駕籠。",
+    ],
     credit:"掃描：Cleveland Museum of Art（public domain）· via Wikimedia Commons" },
   { slug:"54-otsu", ja:"大津", pic:"走井茶店", map:[.694,.061],
     details:[[.72,.68,"米俵滿載的牛車"],[.12,.85,"走井湧泉"],[.35,.72,"走井茶店的店先"]],
     desc:"大津走井茶店，名水湧泉清冽。滿載米俵的牛車隆隆駛過——琵琶湖物資進京的最後一程。",
+    facts:[
+      "大津是東海道第 53 宿、最後一宿，兼琵琶湖水運的湖港，人口居各宿場之冠。",
+      "牛車滿載米俵翻越逢坂山往京都；茶屋名水「走井」的湧泉今存於逢坂的月心寺庭內。",
+    ],
     credit:"掃描：Cleveland Museum of Art（CC0）· via Wikimedia Commons" },
   { slug:"55-kyoto", ja:"京師", pic:"三条大橋", map:[.883,.080],
     details:[[.72,.58,"橋上打傘的都人"],[.35,.72,"鴨川上的橋腳"],[.55,.18,"東山連峰"]],
     desc:"終點三条大橋。鴨川橋上都人雅士往來，東山連峰橫臥天際——五十三次道中，在此圓滿結願。",
+    facts:[
+      "三条大橋是東海道終點；擬寶珠上留有天正十八年（1590）豐臣秀吉命增田長盛改修的銘文。",
+      "廣重把三条大橋的石造橋墩畫成了木造——成為「廣重可能未曾親至京都」之說的證據之一；遠景是東山連峰。",
+    ],
     credit:"掃描：Museum of Fine Arts Boston（public domain）· via Wikimedia Commons" },
 ];
 
@@ -771,7 +971,7 @@ function openScene(i) {
   $("day-banner").textContent = `第 ${state.days} 日｜${state.log}`;
   setSceneImage(isDone(s));   // 過關的站直接展示真跡
   $("btn-flip").style.display = isDone(s) ? "" : "none";
-  // 過關回看時，場景頁直達豆知識（開圖鑑卡並自動展開）
+  // 過關回看時，場景頁直達道中見聞（開圖鑑卡並自動展開）
   $("btn-facts").style.display = (isDone(s) && (s.facts || []).length) ? "" : "none";
   renderMarks();
   renderDetailList();
@@ -933,7 +1133,7 @@ function openCard(i, justUnlocked) {
   $("card-title").innerHTML = `${s.ja}<small>${s.pic}</small>`;
   setCardImage();
   $("card-desc").textContent = s.desc;
-  // 宿場豆知識（facts 為選填欄位，逐批補內容）
+  // 道中見聞（facts 為選填欄位，逐批補內容）
   const facts = s.facts || [];
   $("card-facts").style.display = facts.length ? "" : "none";
   $("card-facts").open = false;   // 每次開卡都收合
@@ -969,7 +1169,7 @@ function cardNav(dir) {
 }
 $("card-prev-nav").onclick = () => cardNav(-1);
 $("card-next-nav").onclick = () => cardNav(1);
-// 第一次展開豆知識後記住，「新」徽章從此不再出現
+// 第一次展開道中見聞後記住，「新」徽章從此不再出現
 $("card-facts").addEventListener("toggle", () => {
   if ($("card-facts").open) {
     localStorage.setItem("tokaido-facts-seen", "1");
@@ -978,7 +1178,7 @@ $("card-facts").addEventListener("toggle", () => {
 });
 $("btn-facts").onclick = () => {
   openCard(current, false);
-  $("card-facts").open = true;   // 從場景頁進來就是要看豆知識，直接展開
+  $("card-facts").open = true;   // 從場景頁進來就是要看見聞，直接展開
 };
 $("card-flip").onclick = () => { cardShowPixel = !cardShowPixel; setCardImage(); };
 
