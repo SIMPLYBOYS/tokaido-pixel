@@ -41,8 +41,19 @@
   /* padding-bottom 吸收邊緣節點（日本橋在 .955,.955）的標籤與燈塔放大外溢，
      否則捲動範圍隨動畫脈動、背景跟著抖 */
   #map-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 70px; }
+  /* 地圖載入中：img 的 width/height 屬性讓瀏覽器先按長寬比留位，節點不會塌成一團；
+     圖未載妥時蓋一層和紙底＋提示，載妥淡入 */
   #map-wrap { position: relative; min-width: 900px; }
-  #map-wrap img { width: 100%; display: block; }
+  #map-wrap img { width: 100%; height: auto; display: block; transition: opacity .4s; }
+  #map-wrap.loading img { opacity: 0; }
+  #map-wrap.loading .node, #map-wrap.loading .node-label { visibility: hidden; }
+  #map-wrap.loading::after {
+    content: "─ 東海道名所一覽 展卷中 ─"; position: absolute; inset: 0;
+    display: grid; place-items: center; pointer-events: none;
+    background: var(--washi-dark); color: #716d5f;
+    font-size: 15px; letter-spacing: 4px;
+    animation: loadPulse 1.4s ease-in-out infinite;
+  }
   .node {
     position: absolute; transform: translate(-50%, -50%);
     width: 30px; height: 30px; border-radius: 50%;
@@ -341,7 +352,7 @@
 
 <div id="map" class="view active">
   <div id="map-scroll"><div id="map-wrap">
-    <img src="game-assets/overworld.jpg" alt="東海道名所一覽">
+    <img src="game-assets/overworld.jpg" alt="東海道名所一覽" width="2600" height="1960">
   </div></div>
 </div>
 
@@ -1610,9 +1621,18 @@ $("btn-bgm").onclick = () => bgmSet(!bgm.on);
 document.addEventListener("click", () => bgmStart());
 
 buildMap();
-// 開場自動捲到江戶（地圖右下角）
-$("map-scroll").scrollLeft = 99999;
-window.scrollTo(0, document.body.scrollHeight);
+// 大地圖（2600px、約 1.4MB）載入前先顯示展卷提示，載妥才淡入並捲到江戶
+(() => {
+  const wrap = $("map-wrap"), img = wrap.querySelector("img");
+  const ready = () => {
+    wrap.classList.remove("loading");
+    $("map-scroll").scrollLeft = 99999;   // 開場捲到江戶（地圖右下角）
+    window.scrollTo(0, document.body.scrollHeight);
+  };
+  if (img.complete && img.naturalWidth) return ready();   // 快取命中
+  wrap.classList.add("loading");
+  img.onload = img.onerror = ready;
+})();
 </script>
 </body>
 </html>
