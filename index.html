@@ -243,10 +243,29 @@
     border: 3px solid var(--ink); border-radius: 4px; padding: 18px;
     max-height: 92vh; overflow-y: auto;   /* 豆知識展開後小螢幕可捲動 */
   }
-  /* 宿場豆知識：原生 details 摺疊，預設收合 */
-  .facts { margin: 10px auto 4px; max-width: 640px; text-align: left; font-size: 13.5px; }
-  .facts summary { cursor: pointer; color: var(--teal); letter-spacing: 3px; user-select: none; }
-  .facts ul { margin: 8px 0 0; padding-left: 1.4em; }
+  /* 宿場豆知識：原生 details 摺疊，預設收合；summary 做成朱印風按鈕條 */
+  .facts { margin: 12px auto 4px; max-width: 640px; text-align: left; font-size: 13.5px; }
+  .facts summary {
+    cursor: pointer; user-select: none; list-style: none;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; border: 1.5px solid var(--ink); border-radius: 3px;
+    background: rgba(212,197,164,.55); color: var(--ink); letter-spacing: 3px;
+  }
+  .facts summary::-webkit-details-marker { display: none; }
+  .facts summary::before {   /* 朱印「豆」 */
+    content: "豆"; flex: none; letter-spacing: 0;
+    background: var(--red); color: var(--washi);
+    font-size: 12px; line-height: 1; padding: 3px 4px; border-radius: 2px;
+  }
+  .facts summary::after { content: "▾"; margin-left: auto; transition: transform .2s; }
+  .facts[open] summary::after { transform: rotate(180deg); }
+  #facts-new {   /* 「新」徽章：開過一次即永久隱藏 */
+    display: none; letter-spacing: 0; font-size: 11px; line-height: 1;
+    background: var(--gold); color: var(--ink); border-radius: 2px; padding: 3px 4px;
+  }
+  .facts.fresh #facts-new { display: inline-block; animation: newPulse 1.4s ease-in-out infinite; }
+  @keyframes newPulse { 50% { opacity: .45; } }
+  .facts ul { margin: 8px 4px 0; padding-left: 1.4em; }
   .facts li { margin: 6px 0; line-height: 1.7; color: #55503f; }
   #card .stamp {
     text-align: center; color: var(--red); font-size: 15px; letter-spacing: 4px;
@@ -362,7 +381,7 @@
     </figure>
     <p class="desc" id="card-desc"></p>
     <details class="facts" id="card-facts">
-      <summary>宿場豆知識</summary>
+      <summary>宿場豆知識<span id="facts-new">新</span></summary>
       <ul id="card-facts-list"></ul>
     </details>
     <p class="credit" id="card-credit"></p>
@@ -916,6 +935,8 @@ function openCard(i, justUnlocked) {
   $("card-facts").style.display = facts.length ? "" : "none";
   $("card-facts").open = false;   // 每次開卡都收合
   $("card-facts-list").innerHTML = facts.map(f => `<li>${f}</li>`).join("");
+  // 「新」徽章：還沒開過豆知識的玩家才看得到（給玩過舊版的人一個視覺提示）
+  $("card-facts").classList.toggle("fresh", !localStorage.getItem("tokaido-facts-seen"));
   $("card-credit").textContent = s.credit;
   // 終點京師：改為「完歩回顧」（圖鑑重開也能再看一次完歩式）
   const last = i === STATIONS.length - 1;
@@ -945,6 +966,13 @@ function cardNav(dir) {
 }
 $("card-prev-nav").onclick = () => cardNav(-1);
 $("card-next-nav").onclick = () => cardNav(1);
+// 第一次展開豆知識後記住，「新」徽章從此不再出現
+$("card-facts").addEventListener("toggle", () => {
+  if ($("card-facts").open) {
+    localStorage.setItem("tokaido-facts-seen", "1");
+    $("card-facts").classList.remove("fresh");
+  }
+});
 $("card-flip").onclick = () => { cardShowPixel = !cardShowPixel; setCardImage(); };
 
 /* ---- 高解析全螢幕檢視（fit ↔ 原寸兩段式）---- */
