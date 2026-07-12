@@ -356,6 +356,7 @@
   <div class="btn-row">
     <button id="btn-back">← 回地圖</button>
     <button id="btn-flip" style="display:none">看像素版</button>
+    <button id="btn-facts" style="display:none">宿場豆知識</button>
   </div>
 </div>
 
@@ -770,6 +771,8 @@ function openScene(i) {
   $("day-banner").textContent = `第 ${state.days} 日｜${state.log}`;
   setSceneImage(isDone(s));   // 過關的站直接展示真跡
   $("btn-flip").style.display = isDone(s) ? "" : "none";
+  // 過關回看時，場景頁直達豆知識（開圖鑑卡並自動展開）
+  $("btn-facts").style.display = (isDone(s) && (s.facts || []).length) ? "" : "none";
   renderMarks();
   renderDetailList();
   updateHud();
@@ -973,6 +976,10 @@ $("card-facts").addEventListener("toggle", () => {
     $("card-facts").classList.remove("fresh");
   }
 });
+$("btn-facts").onclick = () => {
+  openCard(current, false);
+  $("card-facts").open = true;   // 從場景頁進來就是要看豆知識，直接展開
+};
 $("card-flip").onclick = () => { cardShowPixel = !cardShowPixel; setCardImage(); };
 
 /* ---- 高解析全螢幕檢視（fit ↔ 原寸兩段式）---- */
