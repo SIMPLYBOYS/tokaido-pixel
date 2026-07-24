@@ -748,7 +748,8 @@
   "source": "DOVA-SYNDROME",
   "commons_page": "https://dova-s.jp/bgm/detail/10111",
   "license": "DOVA-SYNDROME フリーBGM（商用可・クレジット不要）",
-  "note": "和風・楽しい。3分16秒。江戶下町趣味"
+  "note": "和風・楽しい。3分16秒。江戶下町趣味｜※不隨 repo 附帶：DOVA-SYNDROME 授權允許在作品中播放，但禁止再配布音源檔本身。玩家可自行至上方頁面下載放入 game-assets/bgm/。",
+  "bundled": false
  },
  {
   "file": "bgm/03-edo-burari.mp3",
@@ -756,7 +757,8 @@
   "source": "DOVA-SYNDROME",
   "commons_page": "https://dova-s.jp/bgm/detail/2652",
   "license": "DOVA-SYNDROME フリーBGM（商用可・クレジット不要）",
-  "note": "ループ版 27.5秒。コミカル調"
+  "note": "ループ版 27.5秒。コミカル調｜※不隨 repo 附帶：DOVA-SYNDROME 授權允許在作品中播放，但禁止再配布音源檔本身。玩家可自行至上方頁面下載放入 game-assets/bgm/。",
+  "bundled": false
  },
  {
   "file": "bgm/02-nonbiri-tabifuzei.mp3",
@@ -764,7 +766,8 @@
   "source": "DOVA-SYNDROME",
   "commons_page": "https://dova-s.jp/bgm/detail/9199",
   "license": "DOVA-SYNDROME フリーBGM（商用可・クレジット不要）",
-  "note": "和風・ゆったり。4分39秒"
+  "note": "和風・ゆったり。4分39秒｜※不隨 repo 附帶：DOVA-SYNDROME 授權允許在作品中播放，但禁止再配布音源檔本身。玩家可自行至上方頁面下載放入 game-assets/bgm/。",
+  "bundled": false
  },
  {
   "file": "fonts/yujiboku-stations.woff2",

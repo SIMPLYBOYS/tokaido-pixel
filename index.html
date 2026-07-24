@@ -1570,16 +1570,17 @@ function bgmChiptune() {   // 找不到 bgm.mp3 時的合成備援
   bgm.timer = setInterval(bgmTick, 150);
 }
 // DOVA-SYNDROME 三曲輪播（下町屋台で食べ歩き／のんびり旅風情／江戸のぶらり旅）
-const BGM_LIST = [
-  "game-assets/bgm/01-shitamachi-yatai.mp3",
-  "game-assets/bgm/02-nonbiri-tabifuzei.mp3",
-  "game-assets/bgm/03-edo-burari.mp3",
-];
+// DOVA-SYNDROME 授權禁止「再配布音源檔」，故 mp3 不隨 repo 附帶（見 README）。
+// 想要三曲輪播的人，自行把 mp3 放進 game-assets/bgm/ 並在此列出檔名即可；
+// 留空（預設）時遊戲直接播放內建的原創 chiptune。
+const BGM_LIST = [];
 // 頁面載入就先挑好隨機起始曲並預載——下載不需要使用者手勢，只有播放需要，
 // 首次點擊時歌曲已在緩衝，不用再等 mp3 下載
-bgm.track0 = Math.floor(Math.random() * BGM_LIST.length);
-bgm.warm = new Audio(BGM_LIST[bgm.track0]);
-bgm.warm.preload = "auto";
+bgm.track0 = BGM_LIST.length ? Math.floor(Math.random() * BGM_LIST.length) : 0;
+if (BGM_LIST.length) {
+  bgm.warm = new Audio(BGM_LIST[bgm.track0]);
+  bgm.warm.preload = "auto";
+}
 function bgmPlay(i) {
   bgm.track = ((i % BGM_LIST.length) + BGM_LIST.length) % BGM_LIST.length;
   const a = (bgm.warm && bgm.track === bgm.track0) ? bgm.warm : new Audio(BGM_LIST[bgm.track]);
@@ -1598,7 +1599,8 @@ function bgmStart() {
   if (bgm.started || !bgm.on) return;
   bgm.started = true;
   bgm.fails = 0;
-  bgmPlay(bgm.track0);   // 起點＝已預載的那首
+  if (BGM_LIST.length) bgmPlay(bgm.track0);   // 有 mp3 → 三曲輪播
+  else bgmChiptune();                         // 無 mp3 → 原創合成器 BGM
 }
 function bgmSet(on) {
   bgm.on = on;

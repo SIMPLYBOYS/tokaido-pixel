@@ -20,3 +20,6 @@ overworld-video-nodes.png
 __pycache__/
 *.pyc
 .DS_Store
+
+# DOVA-SYNDROME BGM：授權禁止再配布音源檔，不進 repo（玩家自備，見 README）
+game-assets/bgm/*.mp3
