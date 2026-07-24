@@ -80,7 +80,7 @@ DOVA-SYNDROME's licence permits **playing** the tracks in a work but forbids **r
 
 - **Code**: MIT (see `LICENSE`).
 - **Artwork**: public domain (see `assets/sources.json` for per-image provenance).
-- **Music**: DOVA-SYNDROME free license — bundled with the game, not for standalone redistribution.
+- **Music**: default BGM is an original chiptune (covered by the MIT code license). DOVA-SYNDROME tracks are *not bundled* — see the Music section to add them yourself.
 - **Font**: Yuji Boku © Kataoka Yuji, SIL Open Font License 1.1 (subset embedded).
 
 ---
