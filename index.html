@@ -1697,7 +1697,7 @@ buildMap();
 
 /* ---- 開場動畫：全圖推入日本橋 + 旁白捲軸（改編自 fugaku-pixel）---- */
 const INTRO_LS = "tokaido.intro.v1";
-const ZOOM_SECS = 9;                                  // 全圖推近到日本橋的秒數；其餘節奏依此推算
+const ZOOM_SECS = 12;                                 // 全圖推近到日本橋的秒數；其餘節奏依此推算（放大＝更慢更從容）
 const EDO = { x: 0.70, y: 0.64, w: 0.30, h: 0.34 };   // 日本橋・江戸朱印所在的右下角區域（zoom 終點）
 const INTRO_TEXT = `
   <h2>東海道五十三次 ピクセル</h2>
@@ -1749,10 +1749,10 @@ function playIntro() {
     const tTitle = ZOOM_SECS*550, tCredits = ZOOM_SECS*640;                // 依 zoom 長度按比例推算
     introTimers.push(setTimeout(() => { $("intro-title").classList.remove("show"); $("intro-veil").classList.add("show"); }, tTitle));
     introTimers.push(setTimeout(() => {
-      sc.style.transition = "transform 26s linear";
+      sc.style.transition = "transform 30s linear";
       sc.style.transform = "translateX(-50%) translateY(-" + sc.offsetHeight + "px)";
     }, tCredits));
-    introTimers.push(setTimeout(endIntro, tCredits + 26800));               // 字幕捲完 + margin；計時器代替 transitionend 避免重播殘留
+    introTimers.push(setTimeout(endIntro, tCredits + 30800));               // 字幕捲完 + margin；計時器代替 transitionend 避免重播殘留
   };
   if (img.complete && img.naturalWidth) run(); else img.onload = run;
 }
