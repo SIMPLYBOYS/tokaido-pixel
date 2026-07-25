@@ -384,6 +384,7 @@
   <h1>東海道五十三次 <span class="sub">像素道中記・日本橋→京師</span></h1>
   <div class="hud">
     <span id="day-count"></span>
+    <button id="btn-intro" title="重看開場動畫">開場</button>
     <button id="btn-bgm" title="背景音樂開關">♪</button>
     <button id="btn-zukan">圖鑑 <span id="count">0/11</span></button>
   </div>
@@ -418,7 +419,6 @@
   <div class="foot">
     畫作皆為 public domain。像素版由真跡掃描以 14 色浮世繪色盤量化生成。
     <button id="btn-emaki" style="display:none">旅之繪卷</button>
-    <button id="btn-intro">↺ 開場</button>
     <button id="btn-reset">重新啟程</button>
   </div>
 </div>
@@ -1758,7 +1758,7 @@ function playIntro() {
 }
 $("intro-skip").onclick = endIntro;
 $("intro-replay").onclick = playIntro;
-$("btn-intro").onclick = () => { if ($("zukan").classList.contains("active")) { buildMap(); show("map"); } playIntro(); };
+$("btn-intro").onclick = () => { buildMap(); show("map"); playIntro(); };   // 開場結尾框在江戶=地圖起點，先回地圖再播
 // 首次載入：起程門 → 點擊播放開場（點擊本身也解鎖 BGM）
 (() => {
   let seen = false;
