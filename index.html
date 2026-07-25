@@ -337,6 +337,45 @@
   }
   #zukan .foot { margin-top: 18px; font-size: 12px; color: #716d5f; }
   #zukan .foot button { font-size: 12px; margin-left: 8px; }
+
+  /* ---- 開場：推入日本橋 + 旁白捲軸 ---- */
+  #gate {
+    position: fixed; inset: 0; z-index: 70; display: none;
+    align-items: center; justify-content: center; cursor: pointer;
+    background: var(--washi-dark); text-align: center;
+  }
+  #gate.on { display: flex; }
+  #gate h1 { font-family: "Yuji Boku", serif; font-size: clamp(30px,7vw,56px);
+    letter-spacing: .28em; margin: 0; color: var(--ink); }
+  #gate .g-sub { font-size: 12px; letter-spacing: .4em; color: var(--teal); margin: 1.4em 0; }
+  #gate .g-go { font-family: "Yuji Boku", serif; font-size: 17px; letter-spacing: .3em;
+    color: var(--red); animation: loadPulse 1.6s ease-in-out infinite; }
+  #intro { position: fixed; inset: 0; z-index: 60; background: #0d0a06; overflow: hidden; display: none; }
+  #intro.on { display: block; }
+  #intro-img { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+  #intro-veil { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.6s;
+    background: linear-gradient(to top, rgba(13,10,6,.86) 0%, rgba(13,10,6,.55) 42%, rgba(13,10,6,.32) 100%); }
+  #intro-veil.show { opacity: 1; }
+  #intro-text { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+  #intro-scroll { position: absolute; left: 50%; top: 0; width: min(640px, 88vw);
+    transform: translateX(-50%) translateY(100vh); text-align: center;
+    color: var(--washi); font-size: 15px; line-height: 2; letter-spacing: 1px;
+    text-shadow: 0 1px 6px rgba(0,0,0,.9); }
+  #intro-scroll h2 { font-family: "Yuji Boku", serif; color: var(--gold);
+    font-size: clamp(22px,4.4vw,34px); letter-spacing: .2em; margin: .6em 0 .1em; }
+  #intro-scroll .sub { color: #b3a789; font-size: 11px; letter-spacing: .26em; margin-bottom: 1.6em; }
+  #intro-scroll p { margin: 1.1em 0; }
+  #intro-scroll b { color: var(--gold); font-weight: normal; }
+  #intro-scroll .sep { color: var(--red); margin: 1.9em 0; letter-spacing: .6em; }
+  #intro-title { position: absolute; top: 0; left: 0; right: 0; padding-top: 13vh; text-align: center; z-index: 2;
+    font-family: "Yuji Boku", serif; color: var(--gold); font-size: clamp(28px,6vw,50px); letter-spacing: .3em;
+    text-shadow: 0 2px 14px rgba(0,0,0,.95); opacity: 0; transition: opacity 1.4s; }
+  #intro-title.show { opacity: 1; }
+  #intro-title small { display: block; font-family: sans-serif; font-size: 13px;
+    letter-spacing: .4em; color: #b3a789; margin-top: 1.1em; }
+  #intro-ctrl { position: absolute; bottom: 20px; right: 20px; z-index: 3; display: flex; gap: 10px; }
+  #intro-ctrl button { font: inherit; font-size: 13px; background: rgba(230,216,183,.9); color: var(--ink);
+    border: 1px solid var(--ink); border-radius: 3px; padding: 6px 16px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -379,6 +418,7 @@
   <div class="foot">
     畫作皆為 public domain。像素版由真跡掃描以 14 色浮世繪色盤量化生成。
     <button id="btn-emaki" style="display:none">旅之繪卷</button>
+    <button id="btn-intro">↺ 開場</button>
     <button id="btn-reset">重新啟程</button>
   </div>
 </div>
@@ -410,6 +450,25 @@
 <div id="lightbox">
   <img id="lightbox-img" src="" alt="高解析真跡">
   <div class="tip">點圖放大細節・點背景關閉</div>
+</div>
+
+<div id="gate">
+  <div>
+    <h1>東海道五十三次</h1>
+    <div class="g-sub">像素道中記 ・ 日本橋 → 京師</div>
+    <div class="g-go">— 點擊啟程 —</div>
+  </div>
+</div>
+
+<div id="intro">
+  <img id="intro-img" src="game-assets/overworld.jpg" alt="東海道名所一覽" width="2600" height="1960">
+  <div id="intro-veil"></div>
+  <div id="intro-text"><div id="intro-scroll"></div></div>
+  <div id="intro-title">東海道五十三次<small>像素道中記</small></div>
+  <div id="intro-ctrl">
+    <button id="intro-replay">↺ 重看</button>
+    <button id="intro-skip">跳過 ▶</button>
+  </div>
 </div>
 
 <div id="emaki" class="view">
@@ -1634,6 +1693,84 @@ buildMap();
   if (img.complete && img.naturalWidth) return ready();   // 快取命中
   wrap.classList.add("loading");
   img.onload = img.onerror = ready;
+})();
+
+/* ---- 開場動畫：全圖推入日本橋 + 旁白捲軸（改編自 fugaku-pixel）---- */
+const INTRO_LS = "tokaido.intro.v1";
+const ZOOM_SECS = 9;                                  // 全圖推近到日本橋的秒數；其餘節奏依此推算
+const EDO = { x: 0.70, y: 0.64, w: 0.30, h: 0.34 };   // 日本橋・江戸朱印所在的右下角區域（zoom 終點）
+const INTRO_TEXT = `
+  <h2>東海道五十三次 ピクセル</h2>
+  <div class="sub">HIROSHIGE ・ THE FIFTY-THREE STATIONS</div>
+  <h2>歌川廣重</h2>
+  <div class="sub">UTAGAWA HIROSHIGE ・ 1797–1858</div>
+  <p>出身江戶消防同心之家，<br>三十餘歲以風景畫成名。<br>他筆下的雨、雪、霧與黃昏，<br>後來遠渡重洋，<br>啟發了莫內與梵谷。</p>
+  <div class="sep">✦</div>
+  <p><b>《東海道五十三次》</b><br>保永堂版・約 1833–34 年刊行</p>
+  <p>東海道，是連接江戶與京都的大路。<br>日本橋為始，三条大橋為終，<br>沿途五十三個宿場，<br>徒步走完約需兩週。</p>
+  <p>廣重把這條路畫成五十五幅：<br>大名的行列、渡河的旅人、<br>茶屋的炊煙、驟雨與初雪——<br>每一幅，都是路上的一個瞬間。</p>
+  <div class="sep">✦</div>
+  <p><b>腳下這張大圖</b><br>是北齋的鳥瞰名所圖<br>《東海道名所一覽》(1818)——<br>京都在天邊，江戶在眼前。</p>
+  <div class="sep">✦</div>
+  <p><b>玩法</b><br>在每幅像素化的浮世繪裡，<br>尋找三個藏在畫中的細節，<br>集齊便解鎖博物館典藏的高清原圖。</p>
+  <p class="sub" style="line-height:1.9">畫作：Library of Congress・Cleveland Museum of Art・Rijksmuseum（public domain）<br>地圖：UBC Library（葛飾北齋・1818）</p>
+  <div class="sep">✦</div>
+  <p style="color:var(--gold)">いざ、東海道五十三次の旅へ。<br>啟程——日本橋往京師。</p>`;
+let introTimers = [];
+function introFit(mode) {
+  const img = $("intro-img"), vw = innerWidth, vh = innerHeight, nw = img.naturalWidth, nh = img.naturalHeight;
+  if (!nw) return null;
+  if (mode === "wide") { const s = Math.min(vw/nw, vh/nh) * 0.98; return { s, tx: (vw-nw*s)/2, ty: (vh-nh*s)/2 }; }
+  const rw = EDO.w*nw, rh = EDO.h*nh, s = Math.max(vw/rw, vh/rh);   // 終點：cover-fit 到日本橋區域
+  return { s, tx: -EDO.x*nw*s + (vw-rw*s)/2, ty: -EDO.y*nh*s + (vh-rh*s)/2 };
+}
+function introApply(t) { if (t) $("intro-img").style.transform = `translate(${t.tx}px,${t.ty}px) scale(${t.s})`; }
+function clearIntro() { introTimers.forEach(clearTimeout); introTimers = []; }
+function endIntro() {
+  clearIntro();
+  const el = $("intro");
+  el.style.transition = "opacity .8s"; el.style.opacity = "0";
+  introTimers.push(setTimeout(() => { el.classList.remove("on"); el.style.opacity = ""; el.style.transition = ""; }, 800));
+  try { localStorage.setItem(INTRO_LS, "1"); } catch (e) {}
+}
+function playIntro() {
+  clearIntro();
+  const el = $("intro"), img = $("intro-img"), sc = $("intro-scroll");
+  el.style.transition = ""; el.style.opacity = ""; el.classList.add("on");
+  const run = () => {
+    sc.innerHTML = INTRO_TEXT;
+    $("intro-title").classList.remove("show"); $("intro-veil").classList.remove("show");
+    img.style.transition = "none"; introApply(introFit("wide"));           // 起點：鳥瞰全圖
+    sc.style.transition = "none"; sc.style.transform = "translateX(-50%) translateY(100vh)";
+    void img.offsetWidth;                                                   // reflow
+    $("intro-title").classList.add("show");
+    img.style.transition = `transform ${ZOOM_SECS}s cubic-bezier(.45,0,.15,1)`;
+    introApply(introFit("edo"));                                           // 推入日本橋
+    const tTitle = ZOOM_SECS*550, tCredits = ZOOM_SECS*640;                // 依 zoom 長度按比例推算
+    introTimers.push(setTimeout(() => { $("intro-title").classList.remove("show"); $("intro-veil").classList.add("show"); }, tTitle));
+    introTimers.push(setTimeout(() => {
+      sc.style.transition = "transform 26s linear";
+      sc.style.transform = "translateX(-50%) translateY(-" + sc.offsetHeight + "px)";
+    }, tCredits));
+    introTimers.push(setTimeout(endIntro, tCredits + 26800));               // 字幕捲完 + margin；計時器代替 transitionend 避免重播殘留
+  };
+  if (img.complete && img.naturalWidth) run(); else img.onload = run;
+}
+$("intro-skip").onclick = endIntro;
+$("intro-replay").onclick = playIntro;
+$("btn-intro").onclick = () => { if ($("zukan").classList.contains("active")) { buildMap(); show("map"); } playIntro(); };
+// 首次載入：起程門 → 點擊播放開場（點擊本身也解鎖 BGM）
+(() => {
+  let seen = false;
+  try { seen = !!localStorage.getItem(INTRO_LS); } catch (e) {}
+  if (seen) return;
+  const gate = $("gate");
+  gate.classList.add("on");
+  gate.addEventListener("pointerdown", () => {
+    gate.style.opacity = "0";
+    setTimeout(() => { gate.classList.remove("on"); gate.style.opacity = ""; }, 600);
+    playIntro();
+  }, { once: true });
 })();
 </script>
 </body>
