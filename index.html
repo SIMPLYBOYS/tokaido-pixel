@@ -3,6 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- favicon 內嵌：少一次 404，也少一個 Console 裡永遠在的紅字。圖案同主畫面圖示：藍墨底的宿場燈。 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23233f4d'/%3E%3Ccircle cx='16' cy='16' r='8' fill='%23f0c040'/%3E%3C/svg%3E">
+<!-- 全螢幕有兩條路，因為 **iPhone 的 Safari 沒有 Fullscreen API**（iPad 有）：
+     桌機與 Android 走 HUD 上那顆鈕（原生 API，見底下的 script）；
+     iPhone 只能「加到主畫面」，靠這份 manifest 與 apple-* 開成獨立視窗。
+     狀態列用 black 不用 black-translucent：後者內容會鑽到瀏海底下，header 會被切掉。 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#233f4d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes"><!-- 舊版 iOS 只認這個，Chrome 會唸一句 deprecated；兩個都留 -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="東海道">
+<link rel="apple-touch-icon" href="game-assets/icon-192.png">
 <title>東海道五十三次 — 像素道中記</title>
 <style>
   :root {
@@ -34,6 +47,11 @@
     border: none; padding: 5px 12px; border-radius: 3px; cursor: pointer;
   }
   #btn-bgm.off { opacity: .45; text-decoration: line-through; }
+  /* 全螢幕鈕畫成四個角，不用文字也不用字型裡的 ⤢：「全螢幕」三個字會把 HUD 撐寬一截，
+     而單獨一個 ⤢ 看起來像「外部連結」，何況那個字不是每套字型都有。
+     🔴 header 是 align-items:baseline，而 <svg> 沒有基線——只有圖示的鈕會沉到其他鈕下面。 */
+  #btn-fs::before { content: '\200b'; }   /* 零寬空白：把行高與基線帶回來，高度才跟鄰居一致 */
+  #btn-fs svg { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; }
   .view { display: none; }
   .view.active { display: block; }
 
@@ -386,6 +404,8 @@
     <span id="day-count"></span>
     <button id="btn-intro" title="重看開場動畫">開場</button>
     <button id="btn-bgm" title="背景音樂開關">♪</button>
+    <!-- 不支援（iPhone）或已經在獨立視窗裡跑，底下的 script 會把這顆拿掉 -->
+    <button id="btn-fs" title="全螢幕（F）"></button>
     <button id="btn-zukan">圖鑑 <span id="count">0/11</span></button>
   </div>
 </header>
@@ -1759,6 +1779,48 @@ function playIntro() {
 $("intro-skip").onclick = endIntro;
 $("intro-replay").onclick = playIntro;
 $("btn-intro").onclick = () => { buildMap(); show("map"); playIntro(); };   // 開場結尾框在江戶=地圖起點，先回地圖再播
+
+// 全螢幕。用原生的 Fullscreen API——這件事不值得為它裝任何東西。
+//
+// 🔴 **iPhone 的 Safari 沒有這個 API**（iPad 有）。手機上的全螢幕是「加到主畫面」
+// 之後的獨立視窗，靠 <head> 那份 manifest 與 apple-* meta，跟這顆鈕無關。
+// 所以不支援就把鈕拿掉——留一顆按了沒反應的鈕比沒有這顆鈕更糟。
+// 已經在獨立視窗裡跑的也拿掉：瀏覽器的邊框本來就不在了，那顆鈕沒有意義。
+{
+  const btn = $("btn-fs");
+  const standalone = matchMedia("(display-mode: standalone)").matches
+    || matchMedia("(display-mode: fullscreen)").matches
+    || navigator.standalone === true;
+  // 能力偵測不用 UA 字串：要判斷的本來就是「有沒有這個功能」，而 UA 會說謊、也會過期
+  if (standalone || !document.documentElement.requestFullscreen) {
+    btn.remove();
+  } else {
+    // 四個角：向外＝進去，向內＝出來。圖示與說明跟著**實際狀態**走——使用者也可能按 F11 或 Esc
+    const icon = d => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor"`
+      + ` stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+    const OUT = "M6 1.5H1.5V6M10 1.5H14.5V6M6 14.5H1.5V10M10 14.5H14.5V10";
+    const IN = "M1.5 6H6V1.5M14.5 6H10V1.5M1.5 10H6V14.5M14.5 10H10V14.5";
+    const sync = () => {
+      const on = !!document.fullscreenElement;
+      btn.innerHTML = icon(on ? IN : OUT);
+      btn.title = on ? "離開全螢幕（Esc）" : "全螢幕（F）";
+    };
+    const flip = () => (document.fullscreenElement
+      ? document.exitFullscreen()
+      : document.documentElement.requestFullscreen()).catch(() => {});
+    btn.onclick = flip;
+    addEventListener("fullscreenchange", sync);
+    // F 是遊戲的慣例。這個作品沒有任何文字輸入框，但還是讓開——
+    // 之後真的加了輸入框，這裡不會變成「打不出 f」的怪 bug。
+    addEventListener("keydown", e => {
+      if (e.key !== "f" && e.key !== "F") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.activeElement?.matches("input, textarea, [contenteditable]")) return;
+      flip();
+    });
+    sync();
+  }
+}
 // 首次載入：起程門 → 點擊播放開場（點擊本身也解鎖 BGM）
 (() => {
   let seen = false;

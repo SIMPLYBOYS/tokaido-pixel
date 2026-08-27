@@ -41,6 +41,7 @@ Any static file server works — the repo is also GitHub Pages-ready (Settings �
 - **Emakimono mode** — after completion, all 55 originals join into one continuous handscroll with auto-play unrolling
 - **Completion certificate** — canvas-drawn *kanpo-shō* with a seigaiha wave border, brush typography, vermillion seal, your days/rank/gagō, downloadable as PNG
 - **Sound** — an original Web Audio chiptune (yō-scale pentatonic); optional support for rotating your own BGM tracks
+- **Fullscreen** — the corner-mark button in the header (or the **F** key) hands the whole screen to the road; on iPhone, where Safari has no Fullscreen API, "Add to Home Screen" opens it as a standalone app instead
 - **Zero dependencies** — vanilla JS in one file, progress in `localStorage`, works offline once loaded
 
 ## The art
