@@ -6,6 +6,9 @@ You are a traveler leaving Edo's Nihonbashi bridge for Kyoto, station by station
 
 No framework, no build step, no server logic. One `index.html`, public-domain art, and your browser.
 
+**Play online → [tokaido-pixel.ferrari828.workers.dev](https://tokaido-pixel.ferrari828.workers.dev/)**
+(Mirror: [simplyboys.github.io/tokaido-pixel](https://simplyboys.github.io/tokaido-pixel/) — both redeploy on every push to `main`. Cloudflare's settings are in `wrangler.jsonc`, `.assetsignore` and `_headers`; neither host carries the DOVA-SYNDROME tracks, for the licence reason in [Music](#music).)
+
 |  |  |
 |---|---|
 | ![Overworld map](docs/screenshots/overworld-map.png) | ![Gameplay](docs/screenshots/gameplay-scene.png) |

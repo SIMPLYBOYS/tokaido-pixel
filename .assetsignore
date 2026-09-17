@@ -1,0 +1,36 @@
+# 不上傳到 Cloudflare 的檔案（語法同 .gitignore）。網站只需要 index.html、manifest.webmanifest、game-assets/。
+# 🔴 node_modules 一定要擋：部署環境會把 wrangler 裝在這裡，裡面有 126 MB 的執行檔（見 wrangler.jsonc）
+node_modules
+.wrangler
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+package.json
+package-lock.json
+
+# 🔴 原始博物館掃描 2.1 GB，單檔最大 118 MB（超過 Cloudflare 25 MB 上限）。
+# .gitignore 擋得住 git，擋不住 wrangler——wrangler 上傳的是本機目錄，不是 git 索引。
+assets
+
+# 🔴 DOVA-SYNDROME 的 BGM：授權禁止再配布音源檔，不進 repo 也不進部署（玩家自備，見 README）
+game-assets/bgm
+
+# 已停用的舊資產（遊戲讀 overworld.webm，這個 .off 只是留著）
+game-assets/overworld.webm.off
+
+# 開發工具、研究素材與驗證殘留，玩家用不到
+tools
+docs
+phase-b
+phase1
+phase2-verify
+.playwright-mcp
+.claude
+.DS_Store
+__pycache__
+README.md
+LICENSE
+# 根目錄的工作檔與截圖
+/*.md
+/*.png

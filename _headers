@@ -1,0 +1,30 @@
+# Cloudflare 的快取規則（GitHub Pages 不讀這個檔，那邊固定快取 10 分鐘）。
+#
+# 🔴 分兩類，理由是「改了之後玩家多久看得到」：
+#   程式與資料（index.html、manifest.webmanifest）→ 不設，沿用預設「每次向伺服器確認」。
+#     53 站的座標、細節位置、文案全都寫在 index.html 裡，改一行就要馬上生效。確認只回 304，很便宜。
+#   圖檔（game-assets/）→ 讓瀏覽器直接存著，再訪不必重新下載。
+#     ⚠️ 檔名是固定的 slug，沒有版本碼，所以只給 1 天：重切圖之後最多晚一天玩家才看得到，
+#        ⚠️ 那段期間細節的座標可能跟新圖對不齊（2026-07-13 換過一次 overworld.jpg，就是這種情況）。
+#     字型與 icon → 7 天。不會再改。
+
+/game-assets/fonts/*
+  Cache-Control: public, max-age=604800
+
+/game-assets/icon-192.png
+  Cache-Control: public, max-age=604800
+
+/game-assets/icon-512.png
+  Cache-Control: public, max-age=604800
+
+/game-assets/scenes/*
+  Cache-Control: public, max-age=86400
+
+/game-assets/originals/*
+  Cache-Control: public, max-age=86400
+
+/game-assets/large/*
+  Cache-Control: public, max-age=86400
+
+/game-assets/overworld.jpg
+  Cache-Control: public, max-age=86400
