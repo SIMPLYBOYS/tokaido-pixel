@@ -2,6 +2,9 @@
 # 🔴 node_modules 一定要擋：部署環境會把 wrangler 裝在這裡，裡面有 126 MB 的執行檔（見 wrangler.jsonc）
 node_modules
 .wrangler
+# 🔴 .git 也一定要擋：部署是在 git clone 裡跑的（/opt/buildhome/repo），.git/ 會被當成網頁檔案掃進去。
+#    2026-09-17 18:01 UTC 的 build 就是這樣失敗的：
+#    「Asset too large … .git/objects/pack/pack-fee9584c….pack with a size of 68.4 MiB」（上限 25 MiB）。
 .git
 .gitignore
 .assetsignore
